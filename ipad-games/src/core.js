@@ -56,6 +56,37 @@ const U = {
   },
 };
 
+/* ---------- compatibility + performance safety ---------- */
+// roundRect for older Safari (< 16).
+if (window.CanvasRenderingContext2D && !CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+    let rr = Array.isArray(r) ? r[0] : (typeof r === 'object' && r ? r.x : r) || 0;
+    rr = Math.max(0, Math.min(rr, Math.abs(w) / 2, Math.abs(h) / 2));
+    this.moveTo(x + rr, y);
+    this.arcTo(x + w, y, x + w, y + h, rr);
+    this.arcTo(x + w, y + h, x, y + h, rr);
+    this.arcTo(x, y + h, x, y, rr);
+    this.arcTo(x, y, x + w, y, rr);
+    this.closePath();
+    return this;
+  };
+}
+if (!Array.prototype.at) {
+  Array.prototype.at = function (i) { i = Math.trunc(i) || 0; if (i < 0) i += this.length; return this[i]; };
+}
+// Canvas glow (shadowBlur) is expensive on some devices. If frames get slow, glow is switched off.
+const Perf = { lowFx: false };
+(function () {
+  const proto = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  const d = proto && Object.getOwnPropertyDescriptor(proto, 'shadowBlur');
+  if (!d || !d.set) return;
+  Object.defineProperty(proto, 'shadowBlur', {
+    configurable: true, enumerable: d.enumerable,
+    get() { return d.get.call(this); },
+    set(v) { d.set.call(this, Perf.lowFx ? 0 : v); },
+  });
+})();
+
 function seatSides(n) {
   return n === 2 ? ['bottom', 'top'] : ['bottom', 'left', 'right'];
 }
@@ -120,10 +151,17 @@ function makeCtx(game, n) {
   // fn(dt, t): dt in seconds (0 while paused, so you can still draw), t = performance.now()
   ctx.loop = (fn) => { loops.push(fn); return fn; };
   let last = performance.now();
+  let fpsAvg = 1 / 60, fpsFrames = 0;
   const frame = (t) => {
     if (!alive) return;
-    const dt = Math.min(0.05, Math.max(0, (t - last) / 1000));
+    const rawDt = (t - last) / 1000;
+    const dt = Math.min(0.05, Math.max(0, rawDt));
     last = t;
+    // Slow-frame watchdog: about 2 s averaging under ~40 fps turns glow effects off for the session.
+    if (!Perf.lowFx && rawDt > 0 && rawDt < 0.5) {
+      fpsAvg = fpsAvg * 0.98 + rawDt * 0.02; fpsFrames++;
+      if (fpsFrames > 120 && fpsAvg > 1 / 40) { Perf.lowFx = true; console.log('lowFx on'); }
+    }
     if (!ctx.paused) {
       ctx.time += dt;
       for (const [id, tm] of [...timers]) {
