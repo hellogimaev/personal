@@ -191,9 +191,9 @@ registerGame({
     function eliminate(o, c, why) {
       if (!alive[o] || phase !== 'play') return;
       alive[o] = false;
-      if (c) { c.state = 'broken'; c.fx = 1.6; detach(c); }
+      if (c) { c.state = 'broken'; c.fx = 1.6; detach(c, true); }
       for (const d of circles) if (d.o === o && d !== c && (d.state === 'held' || d.state === 'wait')) {
-        d.state = 'gone'; detach(d); burst(d.x, d.y, P[o].color, 18, 240);
+        d.state = 'gone'; detach(d, true); burst(d.x, d.y, P[o].color, 18, 240);
       }
       if (c) { burst(c.x, c.y, '#ff4d6d', 40, 380); ring(c.x, c.y, c.r, '#ff4d6d', 3.4, 0.8); }
       flash = 0.45; flashColor = P[o].color; shake = 0.4;

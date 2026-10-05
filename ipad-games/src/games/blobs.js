@@ -293,6 +293,7 @@ registerGame({
       floatText(b.i, b.x, b.y - r - 10, '🌵 Лопнул! −40%', '#7dff8a');
       const ns = freeSpot(160); s.x = ns.x; s.y = ns.y; s.pulse = 1;
     }
+    const acc = (name) => name.replace(/ий$/, 'его').replace(/ый$/, 'ого'); // Синий -> Синего
     function eatBlob(a, b) {
       const gain = b.m * 0.6;
       a.m += gain; a.eat = 1; a.full = 2.5;
@@ -305,12 +306,12 @@ registerGame({
       floatText(a.i, a.x, a.y - rad(a.m) - 12, '😴 Объелся! медленнее', '#fff');
       if (b.lives <= 0) {
         b.out = true;
-        say(`💀 ${P[a.i].name} съел ${P[b.i].name}! Выбыл`, { color: a.c, fg: '#111', ms: 1800 });
+        say(`💀 ${P[a.i].name} съел ${acc(P[b.i].name)}! Выбыл`, { color: a.c, fg: '#111', ms: 1800 });
         const left = blobs.filter(x => !x.out);
         if (left.length === 1) finish([left[0].i], 'Последний выживший');
       } else {
         b.respawnT = 2;
-        say(`🍽️ ${P[a.i].name} съел ${P[b.i].name}!`, { color: a.c, fg: '#111', ms: 1500 });
+        say(`🍽️ ${P[a.i].name} съел ${acc(P[b.i].name)}!`, { color: a.c, fg: '#111', ms: 1500 });
       }
     }
     // respawn where it is safest (own edge preferred), away from the big blobs
