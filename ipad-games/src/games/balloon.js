@@ -78,8 +78,9 @@ registerGame({
         pos = P.map(p => {
           const v = ctx.inward(p.i), off = R * 1.25 + 14;
           let x, y;
-          if (p.side === 'bottom') { x = f.x + f.w / 2; y = f.y + f.h - off; }
-          else if (p.side === 'top') { x = f.x + f.w / 2; y = f.y + off; }
+          const sh = N === 2 ? f.w * 0.2 : 0; // 2 players: stagger the balloons so both can grow big
+          if (p.side === 'bottom') { x = f.x + f.w / 2 - sh; y = f.y + f.h - off; }
+          else if (p.side === 'top') { x = f.x + f.w / 2 + sh; y = f.y + off; }
           else if (p.side === 'left') { x = f.x + off; y = f.y + f.h * (N === 3 ? 0.36 : 0.5); }
           else { x = f.x + f.w - off; y = f.y + f.h * (N === 3 ? 0.36 : 0.5); }
           return { x, y, v };
@@ -87,6 +88,7 @@ registerGame({
         let ok = true;
         for (let a = 0; a < N; a++) for (let b = a + 1; b < N; b++) if (U.dist(pos[a].x, pos[a].y, pos[b].x, pos[b].y) < R * 2.75 + 20) ok = false;
         if (P.some(p => (p.side === 'left' || p.side === 'right') && pos[p.i].y - R * 1.4 < f.y + 50)) ok = false;
+        if (R * 2.5 + 30 > f.h) ok = false;
         if (ok) break;
         R *= 0.94;
       }
@@ -371,14 +373,15 @@ registerGame({
       }
       // stress meter (unreliable!)
       if (b.state === 'pump' || b.state === 'idle') {
-        const mh = Rm * 1.7, mw = Math.max(10, Rm * 0.11), mx = Rm * 1.12 + 8, my = -mh / 2;
+        const mh = Rm * 1.7, mw = Math.max(10, Rm * 0.11), my = -mh / 2;
+        const mx = N === 2 ? -(Rm * 1.12 + 8) - mw : Rm * 1.12 + 8; // 2p: on the outer side, away from the timer
         const shown = U.clamp(fr * 0.95 + b.noise + Math.sin(t * 3 + b.i) * 0.03, 0, 1);
         g.fillStyle = 'rgba(255,255,255,.08)'; g.beginPath(); g.roundRect(mx, my, mw, mh, mw / 2); g.fill();
         const gr = g.createLinearGradient(0, my + mh, 0, my);
         gr.addColorStop(0, '#3ddc97'); gr.addColorStop(0.55, '#ffd84d'); gr.addColorStop(1, '#ff4d6d');
         g.fillStyle = gr; g.beginPath(); g.roundRect(mx, my + mh * (1 - shown), mw, mh * shown, mw / 2); g.fill();
         g.font = `${Math.max(14, mw * 1.6)}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
-        g.fillText('😰', mx + mw / 2, my - mw * 1.3);
+        g.fillText('😰', mx + mw / 2, my + mh + mw * 1.4);
       }
       g.restore();
     }
