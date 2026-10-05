@@ -21,6 +21,7 @@ registerGame({
     let shields = P.map(() => 0);
     let circles = [];
     const ptr = new Map();          // pointerId -> {c, x, y}
+    const downs = new Set();        // pointers currently touching the screen
     const parts = [], rings = [], links = [];
     let phase = 'between';          // play | between | over
     let round = 0, nextSpawn = 0, spawnN = 0, rot = 0, nextEvent = 0, cid = 0;
@@ -141,11 +142,12 @@ registerGame({
       if (r < 0.54) return 'jump';
       return 'norm';
     }
-    function detach(c) {
-      for (const [id, e] of ptr) if (e.c === c) ptr.delete(id);
+    function detach(c, spend) {
+      // spend: that finger may not re-claim anything by sliding (used for swaps)
+      for (const [id, e] of ptr) if (e.c === c) { ptr.delete(id); if (spend) downs.delete(id); }
     }
-    function regrace(c, secs) {
-      detach(c);
+    function regrace(c, secs, spend) {
+      detach(c, spend);
       c.state = 'wait'; c.grace = true; c.t0 = ctx.time; c.lim = secs; c.dl = ctx.time + secs;
     }
 
@@ -157,7 +159,7 @@ registerGame({
       const ca = U.pick(circles.filter(c => c.o === a && c.state === 'held'));
       const cb = U.pick(circles.filter(c => c.o === b && c.state === 'held'));
       ca.o = b; cb.o = a;
-      regrace(ca, 4.5); regrace(cb, 4.5);
+      regrace(ca, 4.5, true); regrace(cb, 4.5, true);
       links.push({ a: ca, b: cb, t: 0, life: 4.5 });
       ring(ca.x, ca.y, ca.r, '#fff', 2.2); ring(cb.x, cb.y, cb.r, '#fff', 2.2);
       say(`🔄 Обмен: ${P[a].name} ↔ ${P[b].name}!`, { color: '#fff', fg: '#111', ms: 2200 });
@@ -229,7 +231,6 @@ registerGame({
     }
 
     /* ---------- input ---------- */
-    const downs = new Set();   // pointers currently touching the screen
     function claim(id, x, y, tol) {
       if (phase !== 'play' || ctx.paused) return;
       let best = null, bd = 1e9;
@@ -238,19 +239,19 @@ registerGame({
         if (d < c.r * tol && d < bd) { bd = d; best = c; }
       }
       if (!best) return;
-        if (best.kind === 'bonus') {
-          best.state = 'gone';
-          shields[best.o]++;
-          burst(best.x, best.y, '#ffd84d', 36, 300); ring(best.x, best.y, best.r, '#ffd84d', 3);
-          sayP(best.o, `🛡 ${P[best.o].name}: можно отпустить палец`, { ms: 2000 });
-          renderHud();
-          return;
-        }
-        best.state = 'held'; best.grace = false;
-        ptr.set(id, { c: best, x, y });
-        if (best.kind === 'jump' && !best.jumped) best.jumpAt = ctx.time + U.rand(1.8, 3.2);
-        burst(best.x, best.y, P[best.o].color, 10, 140); ring(best.x, best.y, best.r, '#fff', 1.6, 0.35);
+      if (best.kind === 'bonus') {
+        best.state = 'gone';
+        shields[best.o]++;
+        burst(best.x, best.y, '#ffd84d', 36, 300); ring(best.x, best.y, best.r, '#ffd84d', 3);
+        sayP(best.o, `🛡 ${P[best.o].name}: можно отпустить палец`, { ms: 2000 });
         renderHud();
+        return;
+      }
+      best.state = 'held'; best.grace = false;
+      ptr.set(id, { c: best, x, y });
+      if (best.kind === 'jump' && !best.jumped) best.jumpAt = ctx.time + U.rand(1.8, 3.2);
+      burst(best.x, best.y, P[best.o].color, 10, 140); ring(best.x, best.y, best.r, '#fff', 1.6, 0.35);
+      renderHud();
     }
     ctx.pointer(cv, {
       down(id, x, y) { downs.add(id); claim(id, x, y, 1.25); },
