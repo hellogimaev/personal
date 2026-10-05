@@ -81,7 +81,10 @@ registerGame({
       const l = sides.includes('left') ? d : 0, r = sides.includes('right') ? d : 0;
       const t = sides.includes('top') ? d : 0, b = sides.includes('bottom') ? d : 0;
       const m = 8;
-      return { x: l + m, y: t + m, w: Math.max(120, ctx.W - l - r - 2 * m), h: Math.max(120, ctx.H - t - b - 2 * m) };
+      // keep the core exit button (2p: middle of left edge, 3p: middle of top edge) off the field
+      const ex = 46;
+      const exL = ctx.n === 2 ? ex : 0, exT = ctx.n === 2 ? 0 : ex;
+      return { x: l + m + exL, y: t + m + exT, w: Math.max(120, ctx.W - l - r - 2 * m - exL), h: Math.max(120, ctx.H - t - b - 2 * m - exT) };
     }
     let FW = 600, FH = 400, S = 500;
     let view = { s: 1, ox: 0, oy: 0 };
