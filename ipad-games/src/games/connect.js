@@ -64,7 +64,7 @@ registerGame({
       const W = ctx.W, H = ctx.H, d = seats[0].z.h;
       const r = ctx.n === 2 ? { x: 0, y: d, w: W, h: H - 2 * d } : { x: d, y: 0, w: W - 2 * d, h: H - d };
       const pad = 12;
-      const cell = Math.min((r.w - 2 * pad) / C, (r.h - 2 * pad) / (R + 0.35));
+      const cell = Math.min((r.w - 2 * pad) / (C + 0.3), (r.h - 2 * pad) / (R + 0.35));
       const bw = cell * C, bh = cell * R;
       const bx = r.x + (r.w - bw) / 2;
       const by = r.y + (r.h - bh) / 2 + cell * 0.17;
@@ -97,14 +97,12 @@ registerGame({
         done = true;
         winLine = line;
         render(p);
-        ctx.toast(`${ctx.players[p].name}: 4 в ряд!`, { color: ctx.players[p].color, fg: '#111', ms: 1700 });
         ctx.after(1900, () => ctx.end({ winner: p }));
         return;
       }
       if (grid[0].every(v => v >= 0)) {
         done = true;
         render(null);
-        ctx.toast('Поле заполнено', { ms: 1400 });
         ctx.after(1500, () => ctx.end({}));
         return;
       }

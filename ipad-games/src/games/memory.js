@@ -9,6 +9,8 @@ registerGame({
     const SYMBOLS = ['🍎', '🍉', '🍓', '🍒', '🌻', '🌵', '🍄', '⭐', '🌙', '🔥', '💧', '❄️', '⚽', '🏀', '🎈',
       '🎁', '🐸', '🐼', '🦋', '🐙', '🐢', '👑', '💎', '🌈', '🍩', '🎲', '🐞', '🍋', '🌸', '🍀'];
     const score = ctx.players.map(() => 0);
+    // 3p: push the toast copies further apart so the rotated copies don't overlap
+    const say = (text, o = {}) => ctx.toast(text, Object.assign({ offset: ctx.n === 3 ? Math.max(90, text.length * 7.5 + 30) : 70 }, o));
     let turn = U.randInt(0, ctx.n - 1);
     let open = [];       // up to 2 cards currently face up (not yet matched)
     let busy = false;    // waiting for a miss to flip back
@@ -131,7 +133,7 @@ registerGame({
           found++;
           render();
           if (found === PAIRS) finish();
-          else ctx.toast(`Пара! ${ctx.players[turn].name} ходит ещё`, { color: ctx.players[turn].color, fg: '#111', ms: 900 });
+          else say('Пара! Ещё ход', { color: ctx.players[turn].color, fg: '#111', ms: 900 });
         });
       } else {
         busy = true;

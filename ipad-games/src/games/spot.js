@@ -15,6 +15,8 @@ registerGame({
       '🎩', '👓', '💎', '❤️', '🍕', '🧀', '🍦'];
 
     const score = ctx.players.map(() => 0);
+    // 3p: push the toast copies further apart so the rotated copies don't overlap
+    const say = (text, o = {}) => ctx.toast(text, Object.assign({ offset: ctx.n === 3 ? Math.max(90, text.length * 7.5 + 30) : 70 }, o));
     const frozen = ctx.players.map(() => false);
     let state = 'play'; // play | show | done
     let center = [];          // symbols on the center card
@@ -220,10 +222,10 @@ registerGame({
         render();
         if (score[i] >= TARGET) {
           state = 'done';
-          ctx.toast(`${ctx.players[i].name} нашёл ${cell._sym}`, { color: ctx.players[i].color, fg: '#111', ms: 1100 });
+          say(`${cell._sym} +1`, { color: ctx.players[i].color, fg: '#111', ms: 1100 });
           ctx.after(1200, () => ctx.end({ winner: i, scores: score.slice() }));
         } else {
-          ctx.toast(`+1 ${ctx.players[i].name}`, { color: ctx.players[i].color, fg: '#111', ms: 900 });
+          say(`${cell._sym} +1`, { color: ctx.players[i].color, fg: '#111', ms: 900 });
           ctx.after(1000, nextRound);
         }
       } else {

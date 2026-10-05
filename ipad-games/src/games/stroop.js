@@ -25,6 +25,7 @@ registerGame({
       .g-stroop .wd{position:absolute;left:0;top:0;display:flex;align-items:center;justify-content:center;
         border-radius:22px;background:#2a2f44;box-shadow:0 6px 24px rgba(0,0,0,.35);
         font-weight:900;letter-spacing:1px;white-space:nowrap;transition:background .2s}
+      .g-stroop .wd .res{position:absolute;left:0;right:0;bottom:6%;text-align:center;font-size:var(--rs);letter-spacing:0}
       .g-stroop .wd.empty{background:#1b1f31}
       .g-stroop .wd .q{color:#596086}
       .g-stroop .zi{position:absolute;inset:8px;display:flex;gap:10px;align-items:stretch}
@@ -114,12 +115,13 @@ registerGame({
         const bw = Math.min(len, 760), bh = Math.min(dep, 230);
         const el = words[p.i];
         // font that fits the longest word into the box
-        let fs = Math.min(bh * 0.55, 110);
+        let fs = Math.min(bh * 0.5, 110);
         const tw = textW(LONGEST, fs);
         if (tw > bw * 0.9) fs *= bw * 0.9 / tw;
         el.style.width = bw + 'px';
         el.style.height = bh + 'px';
         el.style.fontSize = fs + 'px';
+        el.style.setProperty('--rs', U.clamp(bh * 0.15, 15, 30) + 'px');
         const cx = r.x + r.w / 2, cy = r.y + r.h / 2;
         el.style.transform = `translate(${cx - bw / 2}px,${cy - bh / 2}px) rotate(${p.rot}deg)`;
       });
@@ -140,6 +142,11 @@ registerGame({
         s.scN.textContent = score[i];
         s.inner.classList.toggle('locked', locked.has(i));
       });
+    }
+
+    // result line under the word in every copy (instead of toasts, which would cover the word)
+    function showResult(text, color) {
+      words.forEach(el => el.append(U.h('div', { class: 'res', style: { color } }, text)));
     }
 
     function showWord() {
@@ -184,10 +191,10 @@ registerGame({
         render();
         if (score[i] >= TARGET) {
           state = 'done';
-          ctx.toast(`${ctx.players[i].name}: +1`, { color: ctx.players[i].color, fg: '#111', ms: 1000 });
+          showResult(`${ctx.players[i].name} +1 · ${card.match ? 'совпадает' : 'не совпадает'}`, ctx.players[i].color);
           ctx.after(1000, () => ctx.end({ winner: i, scores: score.slice() }));
         } else {
-          ctx.toast(`+1 ${ctx.players[i].name}`, { color: ctx.players[i].color, fg: '#111', ms: 800 });
+          showResult(`${ctx.players[i].name} +1 · ${card.match ? 'совпадает' : 'не совпадает'}`, ctx.players[i].color);
           gap(800);
         }
       } else {
@@ -196,7 +203,7 @@ registerGame({
         btn.classList.add('wrong');
         render();
         if (locked.size === ctx.n) {
-          ctx.toast(card.match ? 'Совпадало!' : 'Не совпадало!', { ms: 1000 });
+          showResult(card.match ? 'Совпадало!' : 'Не совпадало!', '#e9ecf6');
           gap(1100);
         }
       }
