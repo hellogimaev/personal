@@ -229,15 +229,15 @@ registerGame({
     }
 
     /* ---------- input ---------- */
-    ctx.pointer(cv, {
-      down(id, x, y) {
-        if (phase !== 'play' || ctx.paused) return;
-        let best = null, bd = 1e9;
-        for (const c of circles) if (c.state === 'wait') {
-          const d = U.dist(x, y, c.x, c.y);
-          if (d < c.r * 1.25 && d < bd) { bd = d; best = c; }
-        }
-        if (!best) return;
+    const downs = new Set();   // pointers currently touching the screen
+    function claim(id, x, y, tol) {
+      if (phase !== 'play' || ctx.paused) return;
+      let best = null, bd = 1e9;
+      for (const c of circles) if (c.state === 'wait') {
+        const d = U.dist(x, y, c.x, c.y);
+        if (d < c.r * tol && d < bd) { bd = d; best = c; }
+      }
+      if (!best) return;
         if (best.kind === 'bonus') {
           best.state = 'gone';
           shields[best.o]++;
@@ -251,9 +251,16 @@ registerGame({
         if (best.kind === 'jump' && !best.jumped) best.jumpAt = ctx.time + U.rand(1.8, 3.2);
         burst(best.x, best.y, P[best.o].color, 10, 140); ring(best.x, best.y, best.r, '#fff', 1.6, 0.35);
         renderHud();
+    }
+    ctx.pointer(cv, {
+      down(id, x, y) { downs.add(id); claim(id, x, y, 1.25); },
+      move(id, x, y) {
+        const e = ptr.get(id);
+        if (e) { e.x = x; e.y = y; }
+        else if (downs.has(id)) claim(id, x, y, 0.9); // a free finger may slide onto a waiting circle
       },
-      move(id, x, y) { const e = ptr.get(id); if (e) { e.x = x; e.y = y; } },
       up(id) {
+        downs.delete(id);
         const e = ptr.get(id);
         if (!e) return;
         ptr.delete(id);

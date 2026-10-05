@@ -228,7 +228,7 @@ registerGame({
       b.thr = Math.max(1, b.thr - 4);
       b.needled = 1;
       if (b.hint) b.hint = null; // the old hint is no longer valid
-      say(`🪡 ${P[from].name} уколол ${P[to].name}!`, { color: P[from].color, fg: '#111', ms: 1500 });
+      floatText(from, `🪡 Уколол: ${P[to].name}!`, P[to].color);
       const p = pos[to];
       burst(p.x, p.y, '#e0e6ff', 14, 300, 3);
       floatText(to, '🪡 Укол! шарик слабее', '#ff9ab0');
@@ -458,7 +458,7 @@ registerGame({
         g.globalAlpha = Math.min(1, (1.8 - fl.t) * 2);
         const fs = fl.big ? Math.max(26, Rm * 0.36) : Math.max(17, Rm * 0.2);
         g.font = `900 ${fs}px -apple-system, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
-        const y = -Rm * 0.75 - fl.t * 30;
+        const y = -Rm * 0.2 - fl.t * 30; // over the own balloon, so 3 players' texts never collide
         g.lineWidth = 6; g.strokeStyle = 'rgba(0,0,0,.75)'; g.strokeText(fl.text, 0, y);
         g.fillStyle = fl.c; g.fillText(fl.text, 0, y);
         g.restore();

@@ -168,7 +168,9 @@ registerGame({
         parts.push({ x: c.x + U.rand(-20, 20), y: c.y + U.rand(-20, 20), vx: (tx - c.x) / t * U.rand(0.8, 1.1), vy: (ty - c.y) / t * U.rand(0.8, 1.1), life: 1, c: color, r: U.rand(3, 7), nodrag: true });
       }
     }
-    function say(text, o) { const c = center(); return ctx.toast(text, Object.assign({ ms: 1500, offset: c.S * 0.33 }, o || {})); }
+    // notices are drawn inside each player's copy of the pot display (toasts would overlap with 3 players)
+    let notice = null;
+    function say(text, o) { notice = { text, bg: (o && o.color) || '#fff', fg: (o && o.fg) || '#111', until: ctx.time + ((o && o.ms) || 1500) / 1000, t0: ctx.time }; }
 
     /* ---------- flow ---------- */
     function nextRound() {
@@ -386,9 +388,22 @@ registerGame({
         g.font = `900 ${big}px -apple-system, sans-serif`;
         g.lineWidth = 8; g.strokeStyle = 'rgba(0,0,0,.6)'; g.strokeText(txt, 0, 0);
         g.fillStyle = col; g.fillText(txt, 0, 0);
-        g.font = `800 ${big * 0.3}px -apple-system, sans-serif`;
-        g.fillStyle = warn > 0 && phase === 'run' ? '#ff4d6d' : 'rgba(255,255,255,.75)';
-        g.fillText(small, 0, big * 0.72);
+        if (notice && ctx.time < notice.until) {
+          let fs = big * 0.32;
+          g.font = `900 ${fs}px -apple-system, sans-serif`;
+          let w = g.measureText(notice.text).width;
+          const maxW = S * 0.6;
+          if (w + fs > maxW) { fs *= maxW / (w + fs); g.font = `900 ${fs}px -apple-system, sans-serif`; w = g.measureText(notice.text).width; }
+          const k = Math.min(1, (ctx.time - notice.t0) * 8);
+          g.save(); g.translate(0, big * 0.78); g.scale(0.7 + 0.3 * k, 0.7 + 0.3 * k);
+          g.fillStyle = notice.bg; g.beginPath(); g.roundRect(-w / 2 - fs * 0.5, -fs * 0.75, w + fs, fs * 1.5, fs * 0.5); g.fill();
+          g.fillStyle = notice.fg; g.fillText(notice.text, 0, 1);
+          g.restore();
+        } else {
+          g.font = `800 ${big * 0.3}px -apple-system, sans-serif`;
+          g.fillStyle = warn > 0 && phase === 'run' ? '#ff4d6d' : 'rgba(255,255,255,.75)';
+          g.fillText(small, 0, big * 0.72);
+        }
         g.restore();
       });
       for (const p of parts) {

@@ -286,7 +286,7 @@ registerGame({
       }
     }
     function floatText(i, x, y, text, color) { floats.push({ i, x, y, text, c: color || '#fff', t: 0 }); }
-    function say(text, o) { return ctx.toast(text, Object.assign({ ms: 1500, offset: Math.min(F.w, F.h) * (N === 2 ? 0.16 : 0.22) }, o || {})); }
+    function say(text, o) { return ctx.toast(text, Object.assign({ ms: 1500 }, N === 2 ? { offset: Math.min(F.w, F.h) * 0.16 } : {}, o || {})); }
 
     /* ---------- items ---------- */
     function rollItem(c) {

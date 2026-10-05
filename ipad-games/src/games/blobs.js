@@ -112,7 +112,7 @@ registerGame({
     }
     function ring(x, y, color, r0, r1) { rings.push({ x, y, c: color, r0, r1, t: 0 }); }
     function floatText(i, x, y, text, color) { floats.push({ i, x, y, text, c: color || '#fff', t: 0 }); }
-    function say(text, o) { return ctx.toast(text, Object.assign({ ms: 1500, offset: Math.min(ar.w, ar.h) * (N === 2 ? 0.2 : 0.28) }, o || {})); }
+    function say(text, o) { return ctx.toast(text, Object.assign({ ms: 1500 }, N === 2 ? { offset: Math.min(ar.w, ar.h) * 0.2 } : {}, o || {})); }
 
     /* ---------- HUD ---------- */
     const hud = P.map(p => {
