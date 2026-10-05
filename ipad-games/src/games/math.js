@@ -71,7 +71,8 @@ registerGame({
         const hh = Math.round(h * (cols === 4 ? 0.36 : 0.3));
         zb.hd.style.height = hh + 'px';
         const qf = Math.round(Math.min(hh * 0.72, (w - 120) / 6.2, 56));
-        zb.q.style.fontSize = qf + 'px';
+        zb.qf = qf; zb.qw = w - 2 * 64;
+        fit(zb);
         zb.opts.style.gridTemplateColumns = `repeat(${cols},1fr)`;
         const rows = 4 / cols;
         const bh = (h - hh - 10 * (rows - 1)) / rows, bw = (w - 10 * (cols - 1)) / cols;
@@ -80,10 +81,16 @@ registerGame({
       }
       const s = Math.max(10, Math.min(18, (Math.min(ctx.W, ctx.H) * 0.3) / TARGET - 8));
       pipsEl.querySelectorAll('span').forEach(e => { e.style.width = e.style.height = s + 'px'; });
-      // in 2p landscape the center gap is small: put pips in a column per player
     }
     layout();
     ctx.onResize(layout);
+
+    // shrink the problem text until it fits between the score pills
+    function fit(zb) {
+      let f = zb.qf || 40;
+      zb.q.style.fontSize = f + 'px';
+      while (f > 14 && zb.q.scrollWidth > zb.qw) { f -= 2; zb.q.style.fontSize = f + 'px'; }
+    }
 
     function renderScores() {
       zones.forEach((zb, i) => { zb.sc.textContent = score[i]; });
@@ -137,6 +144,7 @@ registerGame({
       zones.forEach((zb, i) => {
         zb.z.el.classList.remove('locked', 'won');
         zb.q.textContent = prob.text;
+        fit(zb);
         zb.btns.forEach((b, k) => { b.className = 'ob'; b.textContent = popts[i][k]; });
       });
       timeoutId = ctx.after(LIMIT, () => { ctx.toast('Время вышло', { ms: 1000 }); reveal(-1); });
@@ -164,6 +172,7 @@ registerGame({
       zones.forEach((zb, i) => {
         zb.q.innerHTML = '';
         zb.q.append(prob.text + ' = ', U.h('b', null, String(prob.ans)));
+        fit(zb);
         zb.btns.forEach((b, k) => { if (popts[i][k] === prob.ans && !b.classList.contains('ok')) b.classList.add('right'); });
       });
       renderScores();
@@ -182,7 +191,7 @@ registerGame({
     });
 
     renderScores();
-    zones.forEach(zb => { zb.q.textContent = 'Готовьтесь…'; });
+    zones.forEach(zb => { zb.q.textContent = 'Готовьтесь…'; fit(zb); });
     ctx.after(0, next); // fires when the countdown ends
   },
 });
