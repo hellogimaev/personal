@@ -11,7 +11,8 @@ registerGame({
     '🌵 Колючка: лопает большие капли (−40% массы), малыши прячутся под ней\n' +
     '⚡ Скорость  🛡️ Щит (тебя не съесть)  🧲 Магнит для еды\n' +
     '🍗 ПИР: взрыв еды в центре\n' +
-    '🆘 Съеденный возвращается с бонусом массы\n' +
+    '😴 Кто съел соперника, пару секунд медленнее (объелся)\n' +
+    '🆘 Съеденный возвращается с бонусом массы в безопасном месте\n' +
     '⏱️ Последние 15 секунд еда ×2\n' +
     'У каждого 3 жизни. Побеждает последний выживший или самый большой через 90 секунд.',
   minPlayers: 2, maxPlayers: 3,
@@ -145,6 +146,7 @@ registerGame({
         if (b.speedT > 0) pw += `<span>⚡${Math.ceil(b.speedT)}</span>`;
         if (b.shieldT > 0) pw += `<span>🛡️${Math.ceil(b.shieldT)}</span>`;
         if (b.magnetT > 0) pw += `<span>🧲${Math.ceil(b.magnetT)}</span>`;
+        if (b.full > 0) pw += `<span>😴${Math.ceil(b.full)}</span>`;
         setTxt(h, 'p', h.pw, pw, true);
         h.dash.classList.toggle('cd', b.dashCd > 0 || !b.alive);
         setTxt(h, 't', h.tm, ts);
@@ -293,12 +295,14 @@ registerGame({
     }
     function eatBlob(a, b) {
       const gain = b.m * 0.6;
-      a.m += gain; a.eat = 1;
+      a.m += gain; a.eat = 1; a.full = 2.5;
+      b.sp = pickRespawn(b);
       b.alive = false; b.lives--; b.vx = b.vy = 0;
       burst(b.x, b.y, b.c, 45, 600, 7);
       burst(b.x, b.y, '#ffffff', 15, 400, 3);
       ring(a.x, a.y, a.c, rad(a.m), rad(a.m) + 220);
       shake = Math.max(shake, 16); flash = 0.25; flashC = a.c;
+      floatText(a.i, a.x, a.y - rad(a.m) - 12, '😴 Объелся! медленнее', '#fff');
       if (b.lives <= 0) {
         b.out = true;
         say(`💀 ${P[a.i].name} съел ${P[b.i].name}! Выбыл`, { color: a.c, fg: '#111', ms: 1800 });
@@ -309,12 +313,26 @@ registerGame({
         say(`🍽️ ${P[a.i].name} съел ${P[b.i].name}!`, { color: a.c, fg: '#111', ms: 1500 });
       }
     }
+    // respawn where it is safest (own edge preferred), away from the big blobs
+    function pickRespawn(b) {
+      const M = 90, own = spawnPoint(b.i);
+      const cands = [own, { x: M, y: M }, { x: WW - M, y: M }, { x: M, y: WH - M }, { x: WW - M, y: WH - M },
+        { x: WW / 2, y: M }, { x: WW / 2, y: WH - M }, { x: M, y: WH / 2 }, { x: WW - M, y: WH / 2 }];
+      let best = own, bs = -1e9;
+      for (const c of cands) {
+        let sc = c === own ? 120 : 0, md = 1e9;
+        for (const o of blobs) if (o !== b && o.alive && !o.out) md = Math.min(md, U.dist(c.x, c.y, o.x, o.y) - rad(o.m) * 1.5);
+        sc += Math.min(md, 400);
+        if (sc > bs) { bs = sc; best = c; }
+      }
+      return { x: best.x, y: best.y };
+    }
     function respawn(b) {
-      const s = spawnPoint(b.i);
+      const s = b.sp || spawnPoint(b.i);
       let maxO = 0;
       blobs.forEach(o => { if (o !== b && o.alive && !o.out) maxO = Math.max(maxO, o.m); });
-      const bonus = Math.min(900, Math.max(START_M, maxO * 0.55));
-      b.m = bonus; b.x = s.x; b.y = s.y; b.vx = b.vy = 0;
+      const bonus = Math.min(1000, Math.max(START_M, maxO * 0.6));
+      b.m = bonus; b.x = s.x; b.y = s.y; b.vx = b.vy = 0; b.sp = null; b.full = 0;
       b.alive = true; b.inv = 3; b.dashCd = 0;
       b.speedT = b.shieldT = b.magnetT = 0;
       ring(b.x, b.y, b.c, 5, 120);
@@ -333,6 +351,7 @@ registerGame({
         b.speedT = Math.max(0, b.speedT - dt);
         b.shieldT = Math.max(0, b.shieldT - dt);
         b.magnetT = Math.max(0, b.magnetT - dt);
+        b.full = Math.max(0, (b.full || 0) - dt);
         b.eat = Math.max(0, b.eat - dt * 3);
         b.wob += dt * 3;
         const j = joy[b.i];
@@ -345,7 +364,7 @@ registerGame({
             b.dirX = j.dx / d; b.dirY = j.dy / d;
           }
         }
-        const sp = 255 * Math.pow(31 / r, 0.5) * (b.speedT > 0 ? 1.55 : 1);
+        const sp = 255 * Math.pow(31 / r, 0.5) * (b.speedT > 0 ? 1.55 : 1) * (b.full > 0 ? 0.6 : 1);
         if (b.dashT > 0) {
           b.dashT -= dt;
           if (b.speedT > 0 && Math.random() < 0.5) parts.push({ x: b.x, y: b.y, vx: 0, vy: 0, life: 0.6, c: '#ffe14d', r: 4 });
@@ -490,6 +509,13 @@ registerGame({
         g.lineDashOffset = -t * 40;
         g.beginPath(); g.arc(x, y, (rad(b.m) + 190) * u, 0, TAU); g.stroke(); g.setLineDash([]);
       }
+      if (b.full > 0) {
+        g.save(); ctx.facing(g, b.i, x, y);
+        g.globalAlpha = 0.6 + 0.4 * Math.sin(t * 5);
+        g.font = `${Math.max(14, r * 0.4)}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+        g.fillText('💤', r * 0.7, -r * 0.7 - Math.sin(t * 3) * 4);
+        g.restore();
+      }
       if (leader() === b.i && N > 1) {
         g.save(); ctx.facing(g, b.i, x, y);
         g.font = `${Math.max(16, r * 0.55)}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
@@ -579,7 +605,7 @@ registerGame({
       for (const b of order) if (rad(b.m) > 39) drawBlob(b, t);
       // respawn markers
       for (const b of blobs) if (!b.alive && !b.out) {
-        const s = spawnPoint(b.i), x = sx(s.x), y = sy(s.y);
+        const s = b.sp || spawnPoint(b.i), x = sx(s.x), y = sy(s.y);
         g.strokeStyle = U.alpha(b.c, 0.6); g.lineWidth = 3; g.setLineDash([8, 8]); g.lineDashOffset = t * 30;
         g.beginPath(); g.arc(x, y, 30 * u, 0, TAU); g.stroke(); g.setLineDash([]);
         g.save(); ctx.facing(g, b.i, x, y); g.fillStyle = b.c; g.font = `900 ${26 * u + 6}px sans-serif`;
