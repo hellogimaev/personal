@@ -27,6 +27,8 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;touch-
 .tally{display:flex;gap:10px;align-items:center;background:var(--card);border-radius:16px;padding:10px 14px;font-weight:700;font-size:18px}
 .tally .dot{width:14px;height:14px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:-1px}
 .tally .reset{font-size:13px;color:var(--muted);font-weight:600;padding:4px 8px;border-radius:8px;background:var(--card2)}
+.sec-title{font-size:15px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:22px 0 10px;font-weight:800}
+.sections>.sec-title:first-child{margin-top:4px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
 .card{background:var(--card);border-radius:20px;padding:16px;text-align:left;display:flex;flex-direction:column;gap:6px;min-height:128px;transition:transform .08s}
 .card:active{transform:scale(.97);background:var(--card2)}

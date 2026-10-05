@@ -351,15 +351,27 @@ function load() {
 function showMenu() {
   keepAwake(false);
   App.ctx = null;
-  const grid = U.h('div', { class: 'grid' });
+  // Group cards into sections (App.sections: [{title, ids}]); unlisted games go to the last section.
+  const sections = (App.sections || [{ title: '', ids: [] }]).map(s => ({ ...s, games: [] }));
   for (const g of App.games) {
-    const ok = App.n >= g.minPlayers && App.n <= g.maxPlayers;
-    const card = U.h('button', { class: 'card' + (ok ? '' : ' off') },
-      U.h('div', { class: 'em' }, g.emoji),
-      U.h('div', { class: 't' }, g.title),
-      U.h('div', { class: 'd' }, ok ? g.desc : `Только для ${g.minPlayers === g.maxPlayers ? g.minPlayers : g.minPlayers + '–' + g.maxPlayers} игроков`));
-    if (ok) card.addEventListener('click', () => showRules(g));
-    grid.append(card);
+    const sec = sections.find(s => s.ids.includes(g.id)) || sections[sections.length - 1];
+    sec.games.push(g);
+  }
+  const grid = U.h('div', { class: 'sections' });
+  for (const sec of sections) {
+    if (!sec.games.length) continue;
+    const sg = U.h('div', { class: 'grid' });
+    for (const g of sec.games) {
+      const ok = App.n >= g.minPlayers && App.n <= g.maxPlayers;
+      const card = U.h('button', { class: 'card' + (ok ? '' : ' off') },
+        U.h('div', { class: 'em' }, g.emoji),
+        U.h('div', { class: 't' }, g.title),
+        U.h('div', { class: 'd' }, ok ? g.desc : `Только для ${g.minPlayers === g.maxPlayers ? g.minPlayers : g.minPlayers + '–' + g.maxPlayers} игроков`));
+      if (ok) card.addEventListener('click', () => showRules(g));
+      sg.append(card);
+    }
+    if (sec.title) grid.append(U.h('h2', { class: 'sec-title' }, sec.title));
+    grid.append(sg);
   }
   const seg = U.h('div', { class: 'seg' });
   [2, 3].forEach(k => {
@@ -373,7 +385,7 @@ function showMenu() {
       U.h('p', { class: 'sub' }, 'Положите iPad на стол, каждый садится к своему краю. Работает без интернета.'),
       U.h('div', { class: 'top-row' }, seg, tallyEl()),
       grid,
-      U.h('div', { class: 'foot' }, `${App.games.length} игр · счёт побед сохраняется`)));
+      U.h('div', { class: 'foot' }, `Всего игр: ${App.games.length} · счёт побед сохраняется`)));
   App.el.replaceChildren(menu);
 }
 

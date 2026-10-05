@@ -7,6 +7,12 @@ App.games.sort((a, b) => {
   const ia = ORDER.indexOf(a.id), ib = ORDER.indexOf(b.id);
   return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib);
 });
+App.sections = [
+  { title: '⚡ Кто быстрее', ids: ['reaction', 'tug', 'math', 'spot', 'stroop', 'stopwatch'] },
+  { title: '🎲 Нервы и риск', ids: ['nerves', 'balloon', 'potato', 'twister'] },
+  { title: '🕹️ Аркады', ids: ['airhockey', 'pong', 'curling', 'snakes', 'paint', 'catch', 'sumo', 'blobs', 'tanks', 'racing', 'rhythm'] },
+  { title: '🧠 По очереди', ids: ['memory', 'connect', 'chain', 'dots', 'draw'] },
+];
 App.el = document.getElementById('app');
 load();
 showMenu();
