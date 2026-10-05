@@ -50,8 +50,11 @@ registerGame({
       .g-tug .tb .ice{position:absolute;inset:0;display:none;align-items:center;justify-content:center;font-size:60px;
         background:repeating-linear-gradient(135deg,rgba(190,235,255,.75) 0 14px,rgba(150,210,255,.6) 14px 28px);color:#0b3550}
       .g-tug .tb.frozen .ice{display:flex}
-      .g-tug .tb.inv{animation:tugInv .5s infinite alternate}
-      @keyframes tugInv{0%{filter:hue-rotate(0deg)}100%{filter:hue-rotate(160deg) brightness(.8)}}
+      .g-tug .tb .lbl,.g-tug .tb .cnt{position:relative;z-index:1}
+      .g-tug .tb.inv::after{content:'';position:absolute;inset:0;
+        background:repeating-linear-gradient(45deg,rgba(150,80,255,.7) 0 18px,rgba(150,80,255,.3) 18px 36px);animation:tugInv .4s infinite alternate}
+      .g-tug .tb.inv .lbl{color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.6)}
+      @keyframes tugInv{0%{opacity:.55}100%{opacity:1}}
       @keyframes tugHit{0%{transform:scale(.94);filter:brightness(1.35)}100%{transform:scale(1);filter:none}}
       .g-tug .it{position:absolute;width:86px;height:86px;border-radius:50%;display:flex;align-items:center;justify-content:center;
         font-size:52px;z-index:3;background:radial-gradient(circle,rgba(255,255,255,.95) 0,rgba(255,255,255,.55) 55%,rgba(255,255,255,0) 72%);
@@ -74,6 +77,9 @@ registerGame({
       const { cv, g } = ctx.canvas({ z: 35 });
       cv.style.pointerEvents = 'none';
       const ps = [];
+      const layer = U.h('div', { class: 'toast-layer' });
+      ctx.root.append(layer);
+      const active = [];
       const api = {
         at(el) {
           const r = el.getBoundingClientRect(), R = ctx.root.getBoundingClientRect();
@@ -96,13 +102,29 @@ registerGame({
           setTimeout(() => d.remove(), 700);
         },
         shake(el = ctx.root) { el.classList.remove('fx-shake'); void el.offsetWidth; el.classList.add('fx-shake'); },
+        // announcement facing each player, just in front of their own zone (stacks if several are shown)
         banner(icon, title, sub, o = {}) {
-          const els = ctx.toast(title, { ms: o.ms ?? 1700, color: o.color, fg: o.fg });
-          els.forEach(e => {
-            e.textContent = '';
-            e.classList.add('fx-ban');
-            e.append(U.h('b', null, icon), title);
-            if (sub) e.append(U.h('small', null, sub));
+          ctx.players.forEach(p => {
+            const e = U.h('div', { class: 'toast fx-ban' }, U.h('b', null, icon), title, sub ? U.h('small', null, sub) : null);
+            if (o.color) e.style.background = o.color;
+            if (o.fg) e.style.color = o.fg;
+            const z = zones[p.i].z, r = z.rect, v = ctx.inward(p.i);
+            Object.assign(e.style, { maxWidth: (z.w - 16) + 'px', whiteSpace: 'normal' });
+            layer.append(e);
+            // room between this zone's inner edge and the screen center; drop older banners that would not fit
+            const ex = r.x + r.w / 2 + v.x * z.h / 2, ey = r.y + r.h / 2 + v.y * z.h / 2;
+            const room = (ctx.W / 2 - ex) * v.x + (ctx.H / 2 - ey) * v.y;
+            const mine = active.filter(a => a.i === p.i);
+            const sum = () => mine.reduce((s, a) => s + a.e.offsetHeight + 8, 0);
+            while (mine.length && sum() + e.offsetHeight + 12 > Math.max(room, e.offsetHeight + 12)) {
+              const old = mine.shift(); old.e.remove(); active.splice(active.indexOf(old), 1);
+            }
+            const stack = sum();
+            const off = z.h / 2 + 12 + stack + e.offsetHeight / 2;
+            Object.assign(e.style, { left: (r.x + r.w / 2 + v.x * off) + 'px', top: (r.y + r.h / 2 + v.y * off) + 'px', transform: `translate(-50%,-50%) rotate(${p.rot}deg)` });
+            const a = { i: p.i, e };
+            active.push(a);
+            ctx.after(o.ms ?? 1700, () => { e.remove(); const k = active.indexOf(a); if (k >= 0) active.splice(k, 1); });
           });
         },
       };

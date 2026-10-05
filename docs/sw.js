@@ -1,5 +1,5 @@
-// Offline cache. 94ce6435d3 is replaced at build time.
-const CACHE = 'pg-94ce6435d3';
+// Offline cache. f7d3c6c5dc is replaced at build time.
+const CACHE = 'pg-f7d3c6c5dc';
 const FILES = ['./', 'index.html', 'manifest.webmanifest', 'icon-180.png', 'icon-512.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));

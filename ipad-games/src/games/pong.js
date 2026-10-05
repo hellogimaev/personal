@@ -20,7 +20,13 @@ registerGame({
     const FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Rounded", "Segoe UI", Roboto, sans-serif';
     const EMOJI = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
     // toast with copies spread apart so they don't overlap in 3p
-    const say = (text, o = {}) => ctx.toast(text, Object.assign({ offset: ctx.n === 3 ? Math.min(ctx.W, ctx.H) * 0.2 : 70 }, o));
+    // only the latest message stays on screen, so quick events don't pile up
+    let lastToast = null;
+    const say = (text, o = {}) => {
+      if (lastToast) lastToast.forEach(e => e.remove());
+      lastToast = ctx.toast(text, Object.assign({ offset: ctx.n === 3 ? Math.min(ctx.W, ctx.H) * 0.2 : 70 }, o));
+      return lastToast;
+    };
     const lives = P.map(() => LIVES);
     const out = P.map(() => false);
     const effects = P.map(() => []); // {k, until, dur}
@@ -63,7 +69,7 @@ registerGame({
       multi: { icon: '⚽', name: 'Мультимяч!', w: 2 },
       fire: { icon: '🔥', name: 'Огненный мяч!', w: 2 },
       curve: { icon: '🌀', name: 'Кручёный мяч!', w: 2 },
-      shield: { icon: '🧱', name: 'Щит', w: 2, good: true },
+      shield: { icon: '🧱', name: 'Щит за спиной', w: 2, good: true },
       freeze: { icon: '❄️', name: 'Заморозка соперников', w: 2 },
       rev: { icon: '🔄', name: 'Соперникам наоборот', w: 1.5 },
       ghost: { icon: '👻', name: 'Мяч-призрак', w: 1.5 },
@@ -480,7 +486,7 @@ registerGame({
             g.save();
             g.shadowColor = '#ffb35c'; g.shadowBlur = 16;
             g.fillStyle = 'rgba(255,170,80,.85)';
-            const th = 7 + Math.sin(ctx.time * 8) * 1.5;
+            const th = 11 + Math.sin(ctx.time * 8) * 2;
             if (s === 'bottom') g.fillRect(0, H - th, W, th);
             else if (s === 'top') g.fillRect(0, 0, W, th);
             else if (s === 'left') g.fillRect(0, 0, th, H);
@@ -508,15 +514,17 @@ registerGame({
       else { g.strokeStyle = U.alpha(color, 0.3); g.lineWidth = 2; g.stroke(); }
     }
     const BAD = { mini: 1, freeze: 1, rev: 1 };
-    function drawEffectRings(i, x0, y0) {
+    function drawEffectRings(i, x0, y0, avail) {
       const r = S * 0.028, gap = r * 2.5;
+      const perRow = Math.max(1, Math.floor(avail / gap) + 1);
       effects[i].forEach((e, k) => {
-        const x = x0 + k * gap, frac = U.clamp((e.until - ctx.time) / e.dur, 0, 1);
-        circle(x, y0, r); g.fillStyle = 'rgba(10,12,24,.75)'; g.fill();
+        const x = x0 + (k % perRow) * gap, y = y0 - Math.floor(k / perRow) * gap;
+        const frac = U.clamp((e.until - ctx.time) / e.dur, 0, 1);
+        circle(x, y, r); g.fillStyle = 'rgba(10,12,24,.75)'; g.fill();
         g.strokeStyle = 'rgba(255,255,255,.12)'; g.lineWidth = 4; g.stroke();
-        g.beginPath(); g.arc(x, y0, r, -Math.PI / 2, -Math.PI / 2 + frac * Math.PI * 2);
+        g.beginPath(); g.arc(x, y, r, -Math.PI / 2, -Math.PI / 2 + frac * Math.PI * 2);
         g.strokeStyle = BAD[e.k] ? '#ff6b6b' : '#5dffa8'; g.lineWidth = 4; g.stroke();
-        emoji(PU[e.k].icon, x, y0, r * 1.15);
+        emoji(PU[e.k].icon, x, y, r * 1.15);
       });
     }
     function drawHud() {
@@ -532,7 +540,9 @@ registerGame({
         } else {
           const r = S * 0.022, gap = S * 0.065;
           for (let k = 0; k < LIVES; k++) heart((k - (LIVES - 1) / 2) * gap, 0, r, k < lives[p.i], p.color);
-          drawEffectRings(p.i, gap * 1.5 + S * 0.05, 0);
+          const len = (p.side === 'left' || p.side === 'right') ? H : W;
+          const x0 = gap * 1.5 + S * 0.05;
+          drawEffectRings(p.i, x0, 0, Math.max(0, len / 2 - S * 0.1 - x0));
         }
         g.restore();
       }

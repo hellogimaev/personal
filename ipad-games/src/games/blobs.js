@@ -47,8 +47,8 @@ registerGame({
       const s = P.map(p => p.side);
       const l = s.includes('left') ? d : 0, r = s.includes('right') ? d : 0;
       const t = s.includes('top') ? d : 0, b = s.includes('bottom') ? d : 0;
-      const m = 6;
-      return { x: l + m, y: t + m, w: Math.max(100, ctx.W - l - r - 2 * m), h: Math.max(100, ctx.H - t - b - 2 * m) };
+      const m = 6, el = N === 2 ? 44 : 0, et = N === 3 ? 44 : 0; // keep the exit button spot free
+      return { x: l + m + el, y: t + m + et, w: Math.max(100, ctx.W - l - r - 2 * m - el), h: Math.max(100, ctx.H - t - b - 2 * m - et) };
     }
     const sx = (x) => ar.x + x * u, sy = (y) => ar.y + y * u;
     const wx = (x) => (x - ar.x) / u, wy = (y) => (y - ar.y) / u;
@@ -239,10 +239,10 @@ registerGame({
       items.push({ x: s.x, y: s.y, t, age: 0 });
       ring(s.x, s.y, t.c, 4, 60);
     }
-    ctx.onStart = () => {
+    ctx.after(1, () => {
       started = true;
       say('Тяни палец у своего края!', { ms: 1600 });
-    };
+    });
     ctx.every(7000, spawnItem);
     ctx.after(3000, spawnItem);
     ctx.every(24000, feast);
@@ -292,7 +292,7 @@ registerGame({
       const ns = freeSpot(160); s.x = ns.x; s.y = ns.y; s.pulse = 1;
     }
     function eatBlob(a, b) {
-      const gain = b.m * 0.8;
+      const gain = b.m * 0.6;
       a.m += gain; a.eat = 1;
       b.alive = false; b.lives--; b.vx = b.vy = 0;
       burst(b.x, b.y, b.c, 45, 600, 7);
@@ -313,9 +313,9 @@ registerGame({
       const s = spawnPoint(b.i);
       let maxO = 0;
       blobs.forEach(o => { if (o !== b && o.alive && !o.out) maxO = Math.max(maxO, o.m); });
-      const bonus = Math.min(650, Math.max(START_M, maxO * 0.45));
+      const bonus = Math.min(900, Math.max(START_M, maxO * 0.55));
       b.m = bonus; b.x = s.x; b.y = s.y; b.vx = b.vy = 0;
-      b.alive = true; b.inv = 2.5; b.dashCd = 0;
+      b.alive = true; b.inv = 3; b.dashCd = 0;
       b.speedT = b.shieldT = b.magnetT = 0;
       ring(b.x, b.y, b.c, 5, 120);
       burst(b.x, b.y, b.c, 20, 300, 5);
@@ -363,7 +363,7 @@ registerGame({
         if (b.speedT > 0 && Math.hypot(b.vx, b.vy) > 60 && Math.random() < dt * 30)
           parts.push({ x: b.x - b.vx / 300 * r, y: b.y - b.vy / 300 * r, vx: U.rand(-30, 30), vy: U.rand(-30, 30), life: 0.7, c: '#ffe14d', r: U.rand(2, 5) });
         // slow decay for big blobs
-        if (b.m > 350) b.m -= (b.m - 350) * 0.006 * dt;
+        if (b.m > 400) b.m -= (b.m - 400) * 0.012 * dt;
 
         // food
         const mult = finalPhase ? 2 : 1;
@@ -438,7 +438,7 @@ registerGame({
         }
       }
       refillT += dt;
-      if (refillT > 0.2) { refillT = 0; if (food.length < FOOD_N) { const s = freeSpot(40); addFood(s.x, s.y); } }
+      if (refillT > 0.3) { refillT = 0; if (food.length < FOOD_N) { const s = freeSpot(40); addFood(s.x, s.y); } }
       for (const s of spikes) { s.rot += dt * 0.4; s.pulse = Math.max(0, s.pulse - dt); }
       for (const it of items) it.age += dt;
     }
@@ -615,5 +615,6 @@ registerGame({
     });
     let hudT = 0;
     renderHud();
+    ctx.dbg = { blobs, food, spikes, items, joy, get W() { return { ar, u, WW, WH }; } }; // for automated tests
   },
 });

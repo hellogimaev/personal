@@ -35,7 +35,10 @@ registerGame({
         display:flex;flex-direction:column;align-items:center;justify-content:center;color:#111;font-weight:900;
         transition:inset .4s, opacity .2s, box-shadow .2s}
       .g-reaction .rb .s{font-size:44px;line-height:1}
-      .g-reaction .rb .l{font-size:17px;opacity:.8;margin-top:6px;text-align:center;padding:0 10px;line-height:1.15}
+      .g-reaction .rb .v{font-size:21px;margin-bottom:4px;background:rgba(0,0,0,.18);border-radius:12px;padding:2px 12px;white-space:nowrap}
+      .g-reaction .rb .v:empty{display:none}
+      .g-reaction .rb .l{font-size:18px;opacity:.85;margin-top:6px;text-align:center;padding:0 10px;line-height:1.15}
+      .g-reaction .rb .sw{display:inline-block;width:18px;height:18px;border-radius:50%;border:2px solid #111;vertical-align:-3px;margin-left:6px}
       .g-reaction .rb .dots{display:flex;gap:8px;margin-top:6px;height:14px}
       .g-reaction .rb .dots i{width:14px;height:14px;border-radius:50%;background:rgba(0,0,0,.25)}
       .g-reaction .rb .dots i.on{background:#111}
@@ -75,12 +78,13 @@ registerGame({
       const z = ctx.zone(p.i, { depth: 0.24 });
       const s = U.h('div', { class: 's' }, '0');
       const l = U.h('div', { class: 'l' }, '');
+      const v = U.h('div', { class: 'v' }, '');
       const dots = U.h('div', { class: 'dots' });
       const crown = U.h('div', { class: 'crown' }, '');
-      const b = U.h('div', { class: 'rb' }, crown, s, l, dots);
+      const b = U.h('div', { class: 'rb' }, crown, v, s, l, dots);
       z.el.append(b);
       ctx.tap(b, () => press(p.i));
-      return { z, b, s, l, dots, crown };
+      return { z, b, s, l, v, dots, crown };
     });
 
     function burst(i, color, count = 26) {
@@ -117,7 +121,7 @@ registerGame({
         zz.b.classList.toggle('blocked', blocked.has(i));
         // comeback: the leader's button shrinks a bit
         const lead = score[i] === sorted[0] ? score[i] - sorted[1] : 0;
-        const inset = 10 + Math.min(28, Math.max(0, lead) * 9);
+        const inset = 10 + Math.min(20, Math.max(0, lead) * 7);
         zz.b.style.inset = inset + 'px';
         zz.crown.textContent = lead > 0 ? '👑' : '';
         zz.dots.replaceChildren();
@@ -126,7 +130,13 @@ registerGame({
         }
       });
     }
-    function label(text) { zones.forEach(zz => { zz.l.textContent = text; }); }
+    function label(text, sw) {
+      zones.forEach(zz => {
+        zz.l.replaceChildren(text);
+        if (sw) zz.l.append(U.h('span', { class: 'sw', style: { background: sw } }));
+        zz.v.textContent = variant ? `${variant.icon} ${variant.name}` : '';
+      });
+    }
     function later(ms, fn) { const id = ctx.after(ms, fn); timers.push(id); return id; }
     function clearTimers() { timers.forEach(id => ctx.cancel(id)); timers = []; }
 
@@ -152,7 +162,7 @@ registerGame({
       setSig('#3a405f', false, variant.icon);
       if (target) { sig.style.boxShadow = `0 0 0 10px ${target.c}`; }
       ctx.toast(`${variant.icon} ${variant.name}: ${hint}`, { ms: 1500, color: variant.id === 'gold' ? '#ffd84a' : undefined, fg: variant.id === 'gold' ? '#111' : undefined });
-      label(hint);
+      label(hint, target && target.c);
       render();
       // waits get shorter as the game goes on
       const speed = Math.max(0.6, 1 - round * 0.04);

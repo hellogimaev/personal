@@ -37,8 +37,6 @@ registerGame({
     ctx.root.append(U.h('style', null, `
       .g-catch .cz{position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;
         padding:0 18px;border-top:4px solid var(--pc);pointer-events:none;gap:10px}
-      .g-catch .cz.pad-r{padding-right:64px}
-      .g-catch .cz.pad-l{padding-left:64px}
       .g-catch .cz .sc{display:flex;flex-direction:column;align-items:center;min-width:70px;line-height:1}
       .g-catch .cz .sc b{font-size:46px;font-weight:900;color:var(--pc);font-variant-numeric:tabular-nums}
       .g-catch .cz .sc span{font-size:14px;color:var(--muted);margin-top:4px;font-weight:700}
@@ -65,8 +63,6 @@ registerGame({
     const zones = ctx.players.map(p => {
       const z = ctx.zone(p.i, { depth: 0.15 });
       const box = U.h('div', { class: 'cz' });
-      if (n === 2 && p.side === 'top') box.classList.add('pad-r');
-      if (n === 3 && p.side === 'left') box.classList.add('pad-l');
       z.el.style.background = `linear-gradient(to bottom, ${U.alpha(p.color, 0.22)}, ${U.alpha(p.color, 0.06)})`;
       const sc = U.h('b', null, '0');
       const tm = U.h('div', { class: 'tm' }, '1:00');
@@ -182,6 +178,8 @@ registerGame({
 
     function updateScore(i) { zones[i].sc.textContent = score[i]; }
 
+    const gen = (name) => name.replace(/ый$/, 'ого').replace(/ий$/, 'его');
+    const ochk = (k) => k === 1 ? 'очко' : k >= 2 && k <= 4 ? 'очка' : 'очков';
     function applyPower(i, kind, px, py) {
       const P = POWER[kind];
       if (kind === 'mystery') {
@@ -197,15 +195,15 @@ registerGame({
         const amt = Math.min(2, Math.max(0, score[victim]));
         score[victim] -= amt; score[i] += amt;
         updateScore(i); updateScore(victim);
-        if (arguments.length < 5) say(i, `🦹 Украл ${amt} у ${ctx.players[victim].name}!`, P.col);
-        say(victim, `🦹 ${ctx.players[i].name} украл ${amt} очка!`, '#ff4d6d');
+        if (arguments.length < 5) say(i, `🦹 Украл ${amt} ${ochk(amt)} у ${gen(ctx.players[victim].name)}!`, P.col);
+        say(victim, `🦹 ${ctx.players[i].name} украл ${amt} ${ochk(amt)}!`, '#ff4d6d');
         return;
       }
       if (kind === 'freeze' || kind === 'fog') {
         ctx.players.forEach(p => {
           if (p.i === i) return;
           eff[p.i][kind] = Math.max(eff[p.i][kind], P.dur);
-          say(p.i, kind === 'freeze' ? `❄️ Корзина заморожена!` : `🌫️ Туман от ${ctx.players[i].name}!`, P.col);
+          say(p.i, kind === 'freeze' ? `❄️ Корзина заморожена!` : `🌫️ Туман от ${gen(ctx.players[i].name)}!`, P.col);
         });
         if (arguments.length < 5) say(i, `${P.icon} ${P.name}`, P.col);
         return;

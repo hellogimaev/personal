@@ -98,7 +98,17 @@ registerGame({
       }
     }
     function ring(x, y, r, color, grow = 2.4, life = 0.5) { rings.push({ x, y, r, max: r * grow, color, life, t: 0 }); }
-    function say(text, o = {}) { return ctx.toast(text, Object.assign({ ms: 1500 }, o)); }
+    // queued toasts: one message at a time; a waiting message shortens the current one
+    const tq = []; let tShown = null;
+    function say(text, o = {}) { tq.push({ text, o }); }
+    ctx.loop(() => {
+      if (tShown && (ctx.time - tShown.t0 >= tShown.ms || (tq.length && ctx.time - tShown.t0 >= 0.9))) { tShown.els.forEach(e => e.remove()); tShown = null; }
+      if (!tShown && tq.length) {
+        const it = tq.shift();
+        const o = Object.assign({ offset: N === 3 ? Math.min(ctx.W, ctx.H) * 0.34 : 80 }, it.o);
+        tShown = { t0: ctx.time, ms: (o.ms ?? 1500) / 1000, els: ctx.toast(it.text, Object.assign({}, o, { ms: 600000 })) };
+      }
+    });
     function sayP(i, text, o = {}) { return say(text, Object.assign({ color: P[i].color, fg: '#111' }, o)); }
 
     /* ---------- circles ---------- */
@@ -150,7 +160,7 @@ registerGame({
       regrace(ca, 4.5); regrace(cb, 4.5);
       links.push({ a: ca, b: cb, t: 0, life: 4.5 });
       ring(ca.x, ca.y, ca.r, '#fff', 2.2); ring(cb.x, cb.y, cb.r, '#fff', 2.2);
-      say(`🔄 Обмен! ${P[a].name} ↔ ${P[b].name}: передайте круги`, { color: '#fff', fg: '#111', ms: 2200 });
+      say(`🔄 Обмен: ${P[a].name} ↔ ${P[b].name}!`, { color: '#fff', fg: '#111', ms: 2200 });
       flash = 0.35; flashColor = '#ffffff';
       return true;
     }
@@ -158,7 +168,7 @@ registerGame({
       const a = U.rand(0, 6.283), sp = 34 * Math.min(W, H) / 820;
       drift = { x: Math.cos(a) * sp, y: Math.sin(a) * sp };
       wave = 3.5;
-      say('🌊 Волна! Все круги плывут — держитесь', { color: '#4de3ff', fg: '#111', ms: 2000 });
+      say('🌊 Волна: все круги поплыли!', { color: '#4de3ff', fg: '#111', ms: 2000 });
     }
 
     /* ---------- elimination / rounds ---------- */
@@ -186,7 +196,7 @@ registerGame({
       if (c) { burst(c.x, c.y, '#ff4d6d', 40, 380); ring(c.x, c.y, c.r, '#ff4d6d', 3.4, 0.8); }
       flash = 0.45; flashColor = P[o].color; shake = 0.4;
       const txt = why === 'time' ? 'не успел' : why === 'slide' ? 'соскользнул' : 'отпустил палец';
-      sayP(o, `💥 ${P[o].name} выбыл: ${txt}`, { ms: 1800, offset: N === 2 ? 120 : undefined });
+      sayP(o, `💥 ${P[o].name} выбыл: ${txt}`, { ms: 1800 });
       renderHud();
       const left = P.filter(p => alive[p.i]).map(p => p.i);
       if (left.length === 1) roundWin(left[0]);
@@ -232,7 +242,7 @@ registerGame({
           best.state = 'gone';
           shields[best.o]++;
           burst(best.x, best.y, '#ffd84d', 36, 300); ring(best.x, best.y, best.r, '#ffd84d', 3);
-          sayP(best.o, `🛡 ${P[best.o].name}: щит! Можно отпустить 1 палец`, { ms: 2000 });
+          sayP(best.o, `🛡 ${P[best.o].name}: можно отпустить палец`, { ms: 2000 });
           renderHud();
           return;
         }
@@ -353,7 +363,7 @@ registerGame({
         const e = edgePoint(c.o, c.x, c.y);
         const gr = g.createLinearGradient(e.x, e.y, c.x, c.y);
         gr.addColorStop(0, U.alpha(P[c.o].color, 0.35)); gr.addColorStop(1, U.alpha(P[c.o].color, 0));
-        g.strokeStyle = gr; g.lineWidth = c.r * 0.9;
+        g.strokeStyle = gr; g.lineWidth = c.r * 0.6;
         g.beginPath(); g.moveTo(e.x, e.y); g.lineTo(c.x, c.y); g.stroke();
       }
       // swap / jump links

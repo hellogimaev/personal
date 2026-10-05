@@ -66,6 +66,7 @@ registerGame({
       score: 0, combo: 0, best: 0, perfRun: 0, shield: false, fever: false,
       ghost: 0, speed: 0, shake: 0, boost: 0, travel: BASE_TRAVEL,
     }));
+    ctx._dbg = { notes, st }; // for automated tests
     const fx = [];      // judgement labels
     const banners = []; // per-player announcements on the canvas
     let parts = [];
@@ -136,15 +137,11 @@ registerGame({
       });
       return { x0, y0, x1, y1, cx: (x0 + x1) / 2, cy: (y0 + y1) / 2 };
     }
-    // Lane block centered on the free field, kept clear of the exit button.
+    // Lane block centered on the free field.
     function block(i, F) {
       const p = ctx.players[i], horiz = p.side === 'bottom' || p.side === 'top';
       let a0 = horiz ? F.x0 : F.y0, a1 = horiz ? F.x1 : F.y1;
-      let lw = Math.min(190, (a1 - a0 - 16) / 3);
-      if ((p.side === 'top' || p.side === 'left') && (a0 + a1) / 2 - 1.5 * lw < 60) {
-        a0 = Math.max(a0, 60);
-        lw = Math.min(190, (a1 - a0 - 16) / 3);
-      }
+      const lw = Math.min(190, (a1 - a0 - 16) / 3);
       const r = zones[i].z.rect;
       const zc = horiz ? r.x + r.w / 2 : r.y + r.h / 2;
       const d = (a0 + a1) / 2 - zc;
@@ -202,12 +199,14 @@ registerGame({
       { id: 'speed', text: '⚡ Разгон!', col: '#ffd84a', dur: 5 },
       { id: 'shake', text: '🌪️ Тряска!', col: '#8fe3ff', dur: 5 },
     ];
+    // Красный -> Красного, Синий -> Синего
+    const gen = (name) => name.replace(/ый$/, 'ого').replace(/ий$/, 'его');
     function sabotage(from) {
       const s = U.pick(SAB);
       ctx.players.forEach(p => {
         if (p.i === from) return;
         st[p.i][s.id] = Math.max(st[p.i][s.id], s.dur);
-        announce(p.i, `${s.text} от ${ctx.players[from].name}`, s.col);
+        announce(p.i, `${s.text} от ${gen(ctx.players[from].name)}`, s.col);
       });
       return s;
     }
@@ -442,58 +441,53 @@ registerGame({
         const vis = (f) => {
           let a = 1;
           if (f < 0.08) a *= Math.max(0, f / 0.08);
-          if (s.ghost > 0 && f > 0.3 && f < 0.86) a *= Math.max(0, 1 - Math.min(1, s.ghost * 2)) * 0.15 + 0;
+          if (s.ghost > 0 && f > 0.3 && f < 0.86) a *= 1 - Math.min(1, s.ghost * 2);
           return a;
         };
         for (const nt of notes[p.i]) {
           if (nt.t - now > tr) break;
-          if (nt.state === 1 && !nt.holding && nt.dur === 0) continue;
-          if (nt.state === 1 && !nt.holding && !nt.broken) continue;
+          if (nt.state === 1 && !nt.holding && !nt.broken) continue; // hit / completed
           const L = G.lanes[nt.lane];
-          let f = 1 - (nt.t - now) / tr;
-          if (nt.holding) f = 1;
-          if (f > 1.25 && !nt.dur) continue;
+          const f = nt.holding ? 1 : 1 - (nt.t - now) / tr;
+          const dead = nt.state === 2 || nt.broken;
           if (nt.dur) {
-            // long note: band from head to tail
-            const ft = U.clamp(1 - (nt.t + nt.dur - now) / tr, 0, 1);
-            const fh = Math.min(f, 1);
-            if (ft >= fh && !nt.holding) { if (f > 1.25) continue; }
-            const [hx, hy] = pos(L, fh), [tx, ty] = pos(L, ft);
-            const wh = G.nr * U.lerp(0.3, 1, fh) * 0.55, wt = G.nr * U.lerp(0.3, 1, ft) * 0.55;
-            g.globalAlpha = (nt.state === 2 || nt.broken) ? 0.35 : Math.min(vis(fh), 1) * 0.85 + 0.15 * (s.ghost > 0 ? 0 : 1);
+            // long note: a band from head to tail
+            const ft = 1 - (nt.t + nt.dur - now) / tr;
+            if (ft > 1.25) continue;
+            const fh = Math.min(f, 1.25), fc = U.clamp(ft, 0, 1.25);
+            const [hx, hy] = pos(L, fh), [tx, ty] = pos(L, fc);
+            const wh = G.nr * U.lerp(0.3, 1, Math.min(1, fh)) * 0.55, wt = G.nr * U.lerp(0.3, 1, Math.min(1, fc)) * 0.55;
+            g.globalAlpha = dead ? 0.35 : Math.max(0.25, vis(Math.min(1, (fh + fc) / 2)));
             g.beginPath();
             g.moveTo(hx + G.side.x * wh, hy + G.side.y * wh);
             g.lineTo(tx + G.side.x * wt, ty + G.side.y * wt);
             g.lineTo(tx - G.side.x * wt, ty - G.side.y * wt);
             g.lineTo(hx - G.side.x * wh, hy - G.side.y * wh);
             g.closePath();
-            g.fillStyle = (nt.state === 2 || nt.broken) ? '#555b78' : U.alpha(col, nt.holding ? 0.95 : 0.6);
+            g.fillStyle = dead ? '#555b78' : U.alpha(col, nt.holding ? 0.95 : 0.6);
             g.fill();
             g.lineWidth = 2; g.strokeStyle = nt.holding ? '#ffd84a' : 'rgba(255,255,255,.7)'; g.stroke();
             g.globalAlpha = 1;
-            if (nt.holding || nt.broken || nt.state === 2) {
-              if (!nt.holding) { if (f > 1.25) continue; } else continue;
-            }
-          }
+            if (nt.holding || nt.broken) continue;
+          } else if (f > 1.25) continue;
           const [x, y] = pos(L, Math.min(f, 1.25));
-          const r = G.nr * U.lerp(0.3, 1, Math.min(1, f));
-          let a = nt.state === 2 ? Math.max(0, 1 - (f - 1) * 5) * 0.5 : vis(f);
+          const r = Math.max(1, G.nr * U.lerp(0.3, 1, Math.min(1, f)));
+          const a = dead ? Math.min(1, Math.max(0, 1 - (f - 1) * 5)) * 0.5 : vis(f);
           if (a <= 0.01) continue;
           g.globalAlpha = a;
-          if (nt.gold && nt.state !== 2) {
-            g.shadowColor = '#ffd84a'; g.shadowBlur = 20 + 10 * pulse;
-          }
+          if (nt.gold && !dead) { g.shadowColor = '#ffd84a'; g.shadowBlur = 20 + 10 * pulse; }
           g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2);
-          g.fillStyle = nt.state === 2 ? '#555b78' : nt.gold ? '#ffd84a' : col;
+          g.fillStyle = dead ? '#555b78' : nt.gold ? '#ffd84a' : col;
           g.fill();
           g.shadowBlur = 0;
           g.lineWidth = Math.max(2, r * 0.16); g.strokeStyle = '#fff'; g.stroke();
-          if (nt.gold && nt.state !== 2) {
+          if (nt.gold && !dead) {
             g.font = `${Math.round(r * 1.1)}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
             g.textAlign = 'center'; g.textBaseline = 'middle';
+            g.fillStyle = '#fff';
             g.fillText('⭐', x, y + r * 0.05);
           } else {
-            g.beginPath(); g.arc(x, y, r * 0.38, 0, Math.PI * 2);
+            g.beginPath(); g.arc(x, y, r * (nt.dur ? 0.5 : 0.38), 0, Math.PI * 2);
             g.fillStyle = 'rgba(255,255,255,0.85)'; g.fill();
           }
           g.globalAlpha = 1;
