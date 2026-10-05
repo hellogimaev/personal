@@ -1,0 +1,64 @@
+:root{
+  --bg:#0f1220; --bg2:#171b30; --card:#1f2540; --card2:#283057;
+  --fg:#f2f4ff; --muted:#9aa1c4; --line:#343c66;
+  --p0:#ff5a5f; --p1:#3b9cff; --p2:#ffc93c;
+  --ok:#3ddc97; --bad:#ff4d6d;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Rounded","Segoe UI",Roboto,sans-serif;
+  overflow:hidden;overscroll-behavior:none;
+  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;
+  -webkit-text-size-adjust:100%}
+#app{position:fixed;inset:0;overflow:hidden}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;touch-action:manipulation}
+
+/* ---------- menu ---------- */
+.menu{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;
+  padding:max(20px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+.menu-inner{max-width:1100px;margin:0 auto}
+.menu h1{font-size:30px;margin:4px 0 4px;letter-spacing:-.5px}
+.menu .sub{color:var(--muted);margin:0 0 18px;font-size:15px}
+.top-row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:18px}
+.seg{display:inline-flex;background:var(--card);border-radius:16px;padding:5px;gap:4px}
+.seg button{padding:12px 22px;border-radius:12px;font-size:18px;font-weight:700;color:var(--muted)}
+.seg button.on{background:var(--fg);color:var(--bg)}
+.tally{display:flex;gap:10px;align-items:center;background:var(--card);border-radius:16px;padding:10px 14px;font-weight:700;font-size:18px}
+.tally .dot{width:14px;height:14px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:-1px}
+.tally .reset{font-size:13px;color:var(--muted);font-weight:600;padding:4px 8px;border-radius:8px;background:var(--card2)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.card{background:var(--card);border-radius:20px;padding:16px;text-align:left;display:flex;flex-direction:column;gap:6px;min-height:128px;transition:transform .08s}
+.card:active{transform:scale(.97);background:var(--card2)}
+.card .em{font-size:36px;line-height:1}
+.card .t{font-size:19px;font-weight:800}
+.card .d{font-size:14px;color:var(--muted);line-height:1.3}
+.card.off{opacity:.35}
+.foot{color:var(--muted);font-size:13px;margin-top:22px;text-align:center}
+
+/* ---------- rules ---------- */
+.rules{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;background:var(--bg)}
+.rules-box{max-width:560px;width:100%;background:var(--card);border-radius:24px;padding:24px;text-align:center}
+.rules-box .em{font-size:64px}
+.rules-box h2{margin:6px 0 10px;font-size:30px}
+.rules-box p{color:var(--muted);font-size:17px;line-height:1.45;margin:0 0 20px;text-align:left;white-space:pre-line}
+.btn{display:inline-block;padding:16px 28px;border-radius:16px;font-weight:800;font-size:20px;background:var(--fg);color:var(--bg)}
+.btn.ghost{background:var(--card2);color:var(--fg)}
+.btn-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+
+/* ---------- game ---------- */
+.game-root{position:absolute;inset:0;touch-action:none;overflow:hidden;background:var(--bg)}
+.game-root canvas{position:absolute;left:0;top:0;touch-action:none}
+.zone{position:absolute;touch-action:none}
+.zone-inner{position:absolute;left:50%;top:50%;touch-action:none}
+.exit{position:absolute;left:8px;top:8px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.12);
+  font-size:20px;line-height:40px;text-align:center;z-index:50;color:#fff}
+.overlay{position:absolute;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:rgba(10,12,24,.72);touch-action:none}
+.dialog{background:var(--card);border-radius:24px;padding:22px;text-align:center;min-width:260px;max-width:90vw}
+.dialog h3{margin:0 0 16px;font-size:24px}
+.countdown{position:absolute;inset:0;z-index:55;display:flex;align-items:center;justify-content:center;pointer-events:none;
+  font-size:160px;font-weight:900;color:#fff;text-shadow:0 6px 30px rgba(0,0,0,.5)}
+.toast-layer{position:absolute;inset:0;z-index:40;pointer-events:none}
+.toast{position:absolute;left:50%;top:50%;padding:10px 18px;border-radius:14px;background:rgba(0,0,0,.65);color:#fff;
+  font-weight:800;font-size:24px;white-space:nowrap}
+.result-seat{position:absolute;left:50%;top:50%;font-weight:900;font-size:34px;white-space:nowrap;text-align:center}
+.result-seat small{display:block;font-size:16px;font-weight:700;opacity:.8}
