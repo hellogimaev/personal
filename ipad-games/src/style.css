@@ -3,6 +3,7 @@
   --fg:#f2f4ff; --muted:#9aa1c4; --line:#343c66;
   --p0:#ff5a5f; --p1:#3b9cff; --p2:#ffc93c;
   --ok:#3ddc97; --bad:#ff4d6d;
+  color-scheme:dark;
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);

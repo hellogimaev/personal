@@ -22,3 +22,13 @@ for f in ['manifest.webmanifest', 'icon-180.png', 'icon-512.png']:
     p = os.path.join(src, f)
     if os.path.exists(p): shutil.copy(p, dist)
 print(f'dist/index.html {len(out)//1024} KB, {len(js_files)-2} games, version {ver}')
+
+# Artifact variant: page content only (the host adds doctype/head/body), no PWA links.
+import re
+art = out
+art = re.sub(r'<!doctype html>\s*<html[^>]*>\s*<head>', '', art)
+art = re.sub(r'<link rel="(manifest|apple-touch-icon)"[^>]*>\s*', '', art)
+art = re.sub(r'<meta name="(viewport|apple[^"]*|mobile[^"]*|theme-color)"[^>]*>\s*', '', art)
+art = re.sub(r'<meta charset="utf-8">\s*', '', art)
+art = art.replace('</head>', '').replace('<body>', '').replace('</body>', '').replace('</html>', '')
+open(os.path.join(dist, 'artifact.html'), 'w', encoding='utf-8').write(art.strip() + '\n')
