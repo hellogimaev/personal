@@ -258,7 +258,8 @@ function makeCtx(game, n) {
   // Shows text once per player, near the center, each copy rotated to face its player.
   ctx.toast = (text, opts = {}) => {
     const ms = opts.ms ?? 1200;
-    const off = opts.offset ?? 70;
+    // default: each copy sits ~28% of the short side from center, toward its player, so copies never cross
+    const off = opts.offset ?? (ctx.n === 2 ? 70 : Math.min(ctx.W, ctx.H) * 0.28);
     const els = ctx.players.map(p => {
       const v = ctx.inward(p.i);
       const t = U.h('div', { class: 'toast' }, text);
