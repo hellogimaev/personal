@@ -142,10 +142,9 @@ registerGame({
       const p = pos[i];
       floats.push({ i, x: p.x, y: p.y, text, c: color || '#fff', t: 0, big });
     }
-    function say(text, o) {
-      const f = fieldRect();
-      return ctx.toast(text, Object.assign({ ms: 1500, offset: N === 2 ? 46 : Math.min(f.w, f.h) * 0.08 }, o || {}));
-    }
+    // banner over every balloon, facing its owner (toasts would overlap with 3 players)
+    let banner = null;
+    function say(text, o) { banner = { text, bg: (o && o.color) || '#fff', fg: (o && o.fg) || '#111', t: 0, life: ((o && o.ms) || 1500) / 1000 }; }
     const colorOf = (i) => (type === TYPES.golden || type === TYPES.final) ? '#ffcf3c' : P[i].color;
 
     /* ---------- actions ---------- */
@@ -327,9 +326,10 @@ registerGame({
         bg.addColorStop(0, '#ffffff'); bg.addColorStop(0.12, U.alpha(col, 1)); bg.addColorStop(1, U.alpha(col, 0.75));
         g.fillStyle = bg;
         g.beginPath(); g.ellipse(0, 0, r, r * 1.12, 0, 0, TAU); g.fill();
-        g.strokeStyle = 'rgba(0,0,0,.25)'; g.lineWidth = 2; g.stroke();
+        if (type.mult > 1) { g.strokeStyle = P[b.i].color; g.lineWidth = 5; } else { g.strokeStyle = 'rgba(0,0,0,.25)'; g.lineWidth = 2; }
+        g.stroke();
         // knot
-        g.fillStyle = col; g.beginPath(); g.moveTo(-7, r * 1.12 + 8); g.lineTo(7, r * 1.12 + 8); g.lineTo(0, r * 1.12 - 2); g.fill();
+        g.fillStyle = P[b.i].color; g.beginPath(); g.moveTo(-7, r * 1.12 + 8); g.lineTo(7, r * 1.12 + 8); g.lineTo(0, r * 1.12 - 2); g.fill();
         // highlight
         g.fillStyle = 'rgba(255,255,255,.35)'; g.beginPath(); g.ellipse(-r * 0.38, -r * 0.45, r * 0.16, r * 0.28, -0.5, 0, TAU); g.fill();
         g.restore();
@@ -392,6 +392,7 @@ registerGame({
         for (const r of rings) r.t += dt * 1.8;
         rings = rings.filter(r => r.t < 1);
         for (const f of floats) f.t += dt;
+        if (banner) { banner.t += dt; if (banner.t > banner.life) banner = null; }
         floats = floats.filter(f => f.t < 1.8);
         flash = Math.max(0, flash - dt * 1.3);
         shake = Math.max(0, shake - dt * 40);
@@ -433,6 +434,24 @@ registerGame({
         else { g.beginPath(); g.arc(p.x, p.y, p.r, 0, TAU); g.fill(); }
       }
       g.globalAlpha = 1;
+      if (banner) {
+        const bn = banner, k = Math.min(1, bn.t * 6), fade = Math.min(1, (bn.life - bn.t) * 4);
+        P.forEach(p => {
+          const q = pos[p.i], b = bl[p.i];
+          const maxW = (p.side === 'bottom' || p.side === 'top' ? f.w : f.h * 0.5) * 0.9;
+          g.save(); ctx.facing(g, p.i, q.x, q.y);
+          let fs = Math.max(18, Math.min(30, Rm * 0.26));
+          g.font = `900 ${fs}px -apple-system, sans-serif`;
+          let w = g.measureText(bn.text).width;
+          if (w + fs > maxW) { fs *= maxW / (w + fs); g.font = `900 ${fs}px -apple-system, sans-serif`; w = g.measureText(bn.text).width; }
+          const y = -radius(b) * 1.12 - fs - 18;
+          g.globalAlpha = fade; g.translate(0, y); g.scale(0.6 + 0.4 * k, 0.6 + 0.4 * k);
+          g.fillStyle = bn.bg; g.beginPath(); g.roundRect(-w / 2 - fs * 0.5, -fs * 0.8, w + fs, fs * 1.6, fs * 0.5); g.fill();
+          g.fillStyle = bn.fg; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(bn.text, 0, 1);
+          g.restore();
+        });
+        g.globalAlpha = 1;
+      }
       for (const fl of floats) {
         const p = pos[fl.i];
         g.save(); ctx.facing(g, fl.i, p.x, p.y);
