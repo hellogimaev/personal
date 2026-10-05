@@ -61,6 +61,10 @@ registerGame({
     });
 
     /* ---------- field geometry ---------- */
+    function say(text, o) {
+      const fr = fieldRect();
+      return ctx.toast(text, Object.assign({ offset: Math.max(70, Math.min(fr.w, fr.h) * 0.27) }, o || {}));
+    }
     function fieldRect() {
       const d = Math.round(DEPTH * Math.min(ctx.W, ctx.H));
       const sides = ctx.players.map(p => p.side);
@@ -147,10 +151,10 @@ registerGame({
       renderUI();
       if (round > 1) {
         state = 'ready';
-        ctx.toast(`Раунд ${round}`, { ms: 1100, size: 30 });
+        say(`Раунд ${round}`, { ms: 1100, size: 30 });
         ctx.after(1300, () => {
           state = 'play';
-          ctx.toast('Вперёд!', { ms: 700, color: '#3ddc97', fg: '#0f1220' });
+          say('Вперёд!', { ms: 700, color: '#3ddc97', fg: '#0f1220' });
         });
       } else {
         state = 'play';
@@ -251,13 +255,13 @@ registerGame({
         ui[w].st.textContent = 'раунд твой!';
         const p = ctx.players[w];
         if (wins[w] >= WIN) {
-          ctx.toast(`${p.name} побеждает!`, { color: p.color, fg: '#111', ms: 1500 });
+          say(`${p.name} побеждает!`, { color: p.color, fg: '#111', ms: 1500 });
           ctx.after(1500, () => ctx.end({ winner: w, scores: wins.slice() }));
           return;
         }
-        ctx.toast(`Раунд: ${p.name}`, { color: p.color, fg: '#111', ms: 1500 });
+        say(`Раунд: ${p.name}`, { color: p.color, fg: '#111', ms: 1500 });
       } else {
-        ctx.toast('Ничья в раунде', { ms: 1500 });
+        say('Ничья в раунде', { ms: 1500 });
       }
       ctx.after(1900, newRound);
     }

@@ -15,6 +15,8 @@ registerGame({
     const WIN_GOALS = 7, LIVES = 5;
     const E_MALLET = 0.9, E_WALL = 0.88;
     const FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Rounded", "Segoe UI", Roboto, sans-serif';
+    // toast with copies spread apart so they don't overlap in 3p
+    const say = (text, o = {}) => ctx.toast(text, Object.assign({ offset: ctx.n === 3 ? Math.min(ctx.W, ctx.H) * 0.2 : 70 }, o));
 
     const goals = P.map(() => 0);      // 2p: goals scored by player
     const lives = P.map(() => LIVES);  // 3p
@@ -187,11 +189,11 @@ registerGame({
         goals[sc]++;
         if (goals[sc] >= WIN_GOALS) {
           over = true;
-          ctx.toast(`${P[sc].name} победил!`, { color: P[sc].color, fg: '#111', ms: 1400 });
+          say(`${P[sc].name} победил!`, { color: P[sc].color, fg: '#111', ms: 1400 });
           ctx.after(1300, () => ctx.end({ winner: sc, scores: goals.slice(), msg: `Счёт ${goals[0]} : ${goals[1]}` }));
           return;
         }
-        ctx.toast(`Гол! +1 ${P[sc].name}`, { color: P[sc].color, fg: '#111' });
+        say(`Гол! +1 ${P[sc].name}`, { color: P[sc].color, fg: '#111' });
       } else {
         lives[i]--;
         if (lives[i] <= 0) {
@@ -202,13 +204,13 @@ registerGame({
           if (act.length <= 1) {
             over = true;
             const w = act[0];
-            ctx.toast(`${P[w].name} победил!`, { color: P[w].color, fg: '#111', ms: 1400 });
+            say(`${P[w].name} победил!`, { color: P[w].color, fg: '#111', ms: 1400 });
             ctx.after(1300, () => ctx.end({ winner: w, scores: lives.slice(), msg: 'Остался последним' }));
             return;
           }
-          ctx.toast(`${P[i].name} выбывает`, { color: P[i].color, fg: '#111', ms: 1400 });
+          say(`${P[i].name} выбывает`, { color: P[i].color, fg: '#111', ms: 1400 });
         } else {
-          ctx.toast(`Гол! ${P[i].name}: −1 жизнь`, { color: P[i].color, fg: '#111' });
+          say(`Гол! ${P[i].name}: −1 жизнь`, { color: P[i].color, fg: '#111' });
         }
       }
       ctx.after(1000, () => serve(i));

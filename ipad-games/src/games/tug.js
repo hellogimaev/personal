@@ -6,6 +6,8 @@ registerGame({
   rules: 'Посередине завязан узел каната.\nКаждое нажатие на свою большую кнопку тянет узел к вашему краю.\nКто первым затащит узел за свою линию (она вашего цвета), тот победил.\nУзел понемногу сползает обратно к центру, так что тянуть надо без остановки.\nЧем дольше схватка, тем сильнее рывки.',
   start(ctx) {
     const N = ctx.n;
+    // 3p: push the toast copies further apart so the rotated copies don't overlap
+    const say = (text, o = {}) => ctx.toast(text, Object.assign({ offset: N === 3 ? Math.max(90, text.length * 7.5 + 30) : 70 }, o));
     const DEPTH = 0.22;
     // Pull direction of each player in normalized play-space (u right, v down).
     // 3p: the three pulls sum to zero, so equal tapping keeps the knot still.
@@ -53,6 +55,16 @@ registerGame({
       return { z, b, bar, cnt: b.querySelector('.cnt') };
     });
 
+    function layoutBtns() {
+      zones.forEach(zb => {
+        const h = zb.z.h;
+        zb.b.querySelector('.lbl').style.fontSize = Math.round(U.clamp(h * 0.2, 26, 46)) + 'px';
+        zb.cnt.style.fontSize = Math.round(U.clamp(h * 0.09, 15, 22)) + 'px';
+      });
+    }
+    layoutBtns();
+    ctx.onResize(layoutBtns);
+
     // ----- geometry -----
     function geo() {
       const W = ctx.W, H = ctx.H, d = zones[0].z.h, M = 18;
@@ -94,7 +106,7 @@ registerGame({
       winner = i;
       flash = 1;
       zones.forEach((zb, k) => zb.b.classList.add(k === i ? 'won' : 'lost'));
-      ctx.toast(`${ctx.players[i].name} перетянул!`, { color: ctx.players[i].color, fg: '#111', ms: 1400 });
+      say(`${ctx.players[i].name} перетянул!`, { color: ctx.players[i].color, fg: '#111', ms: 1400 });
       ctx.after(1300, () => ctx.end({ winner: i, msg: 'Рывков: ' + taps.map((t, k) => `${NAMES[k]} ${t}`).join(' · ') }));
     }
 
@@ -117,7 +129,7 @@ registerGame({
         pos.u = U.clamp(pos.u, -1, 1); pos.v = U.clamp(pos.v, -1, 1);
         if (!powerNoted && ctx.time > 15) {
           powerNoted = true;
-          ctx.toast('Рывки сильнее!', { ms: 1100 });
+          say('Рывки сильнее!', { ms: 1100 });
         }
       }
       for (let i = 0; i < N; i++) tension[i] = Math.max(0, tension[i] - dt * 1.6);

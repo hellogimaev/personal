@@ -33,6 +33,9 @@ registerGame({
         align-items:center;justify-content:center;font-weight:900}
       .g-spot .sc .n{font-size:48px;line-height:1}
       .g-spot .sc .t{font-size:15px;opacity:.7;margin-top:2px}
+      .g-spot .zi.tall{flex-direction:column}
+      .g-spot .zi.tall .sc{flex:0 0 64px;flex-direction:row;gap:10px}
+      .g-spot .zi.tall .sc .n{font-size:40px}
       .g-spot .card{flex:1;position:relative;border-radius:22px;background:#f4f1e8;
         box-shadow:inset 0 0 0 5px var(--pc);overflow:hidden;transition:opacity .2s}
       .g-spot .cell{position:absolute;display:flex;align-items:center;justify-content:center;border-radius:16px}
@@ -102,7 +105,7 @@ registerGame({
       ctrSyms = center.map((sym, k) => {
         const el = U.h('div', { class: 'sym' }, sym);
         const a = ringOff + (k - 1) * Math.PI * 2 / (PER_CARD - 1);
-        el._pos = k === 0 ? { x: 0, y: 0, s: U.rand(0.36, 0.46) } : { x: Math.cos(a) * 0.62, y: Math.sin(a) * 0.62, s: U.rand(0.25, 0.36) };
+        el._pos = k === 0 ? { x: 0, y: 0, s: U.rand(0.4, 0.5) } : { x: Math.cos(a) * 0.63, y: Math.sin(a) * 0.63, s: U.rand(0.29, 0.4) };
         el._pos.jx = U.rand(-0.04, 0.04); el._pos.jy = U.rand(-0.04, 0.04);
         el._rot = Math.random() * 360;
         el._sym = sym;
@@ -130,14 +133,23 @@ registerGame({
     }
 
     /* ---------- layout ---------- */
+    // 3 players in portrait: the bottom player's strip is short, so their card grows upward
+    // into the free space above it (the center card does not need the full height).
+    let extra = 0;
     function centerRegion() {
       const W = ctx.W, H = ctx.H;
       const d = seats[0].z.h;
       if (ctx.n === 2) return { x: 0, y: d, w: W, h: H - 2 * d };
-      return { x: d, y: 0, w: W - 2 * d, h: H - d };
+      return { x: d, y: 0, w: W - 2 * d, h: H - d - extra };
     }
 
     function layout() {
+      if (ctx.n === 3) {
+        const d = seats[0].z.h, rw = ctx.W - 2 * d, rh = ctx.H - d;
+        extra = Math.round(U.clamp(rh - rw - 20, 0, d * 0.9));
+        seats[0].inner.style.top = (8 - extra) + 'px';
+        seats[0].inner.classList.toggle('tall', extra > 40);
+      }
       const r = centerRegion();
       const D = Math.max(120, Math.min(r.w, r.h) * 0.94);
       const R = D / 2;

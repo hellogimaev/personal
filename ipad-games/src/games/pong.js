@@ -15,6 +15,8 @@ registerGame({
     const N = ctx.n;
     const LIVES = 3;
     const FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Rounded", "Segoe UI", Roboto, sans-serif';
+    // toast with copies spread apart so they don't overlap in 3p
+    const say = (text, o = {}) => ctx.toast(text, Object.assign({ offset: ctx.n === 3 ? Math.min(ctx.W, ctx.H) * 0.2 : 70 }, o));
     const lives = P.map(() => LIVES);
     const out = P.map(() => false);
     let over = false;
@@ -48,10 +50,21 @@ registerGame({
       add('top', 'right', W - CORNER, 0);
     }
     layout();
-    // range of the paddle center along the edge (as offset from edge middle, in local x)
+    // range of the paddle center along the edge, as local-x offset from the edge middle: {lo, hi}
     function range(i) {
-      const len = edgeLen(i);
-      return Math.max(0, len / 2 - PL / 2 - (N === 3 ? CORNER : 0));
+      const s = P[i].side, horiz = s === 'bottom' || s === 'top';
+      const len = horiz ? W : H, mid = len / 2;
+      let smin = 0, smax = len;
+      for (const c of corners) {
+        const onEdge = s === 'bottom' ? c.y + c.h >= H - 1 : s === 'top' ? c.y <= 1 : s === 'left' ? c.x <= 1 : c.x + c.w >= W - 1;
+        if (!onEdge) continue;
+        if (horiz) { if (c.x <= 1) smin = Math.max(smin, c.x + c.w); else smax = Math.min(smax, c.x); }
+        else { if (c.y <= 1) smin = Math.max(smin, c.y + c.h); else smax = Math.min(smax, c.y); }
+      }
+      const a = ctx.toScreen(i, 1, 0), sg = Math.round(horiz ? a.x : a.y);
+      let u1 = sg * (smin + PL / 2 - mid), u2 = sg * (smax - PL / 2 - mid);
+      if (u1 > u2) [u1, u2] = [u2, u1];
+      return { lo: u1, hi: u2 };
     }
     const paddles = P.map(() => ({ u: 0, tu: 0, hit: 0 })); // u: local-x offset from edge middle
     function paddlePos(i) {
@@ -63,7 +76,7 @@ registerGame({
       const ow = W, oh = H;
       layout();
       for (const b of balls) { b.x *= W / ow; b.y *= H / oh; b.trail = []; }
-      P.forEach(p => { const r = range(p.i); paddles[p.i].u = U.clamp(paddles[p.i].u, -r, r); paddles[p.i].tu = U.clamp(paddles[p.i].tu, -r, r); });
+      P.forEach(p => { const r = range(p.i); paddles[p.i].u = U.clamp(paddles[p.i].u, r.lo, r.hi); paddles[p.i].tu = U.clamp(paddles[p.i].tu, r.lo, r.hi); });
     });
 
     // ---------- input ----------
@@ -81,7 +94,7 @@ registerGame({
       const m = edgeMid(i);
       const l = ctx.toLocal(i, x - m.x, y - m.y);
       const r = range(i);
-      paddles[i].tu = U.clamp(l.x, -r, r);
+      paddles[i].tu = U.clamp(l.x, r.lo, r.hi);
     }
     ctx.pointer(cv, {
       down(id, x, y) { if (over) return; const i = seatActive(x, y); if (i < 0) return; owner.set(id, i); setTarget(i, x, y); },
@@ -121,13 +134,13 @@ registerGame({
           over = true;
           balls.length = 0;
           const w = act[0];
-          ctx.toast(`${P[w].name} победил!`, { color: P[w].color, fg: '#111', ms: 1400 });
+          say(`${P[w].name} победил!`, { color: P[w].color, fg: '#111', ms: 1400 });
           ctx.after(1300, () => ctx.end({ winner: w, scores: lives.slice(), msg: 'Остался последним' }));
           return;
         }
-        ctx.toast(`${P[i].name} выбывает`, { color: P[i].color, fg: '#111', ms: 1400 });
+        say(`${P[i].name} выбывает`, { color: P[i].color, fg: '#111', ms: 1400 });
       } else {
-        ctx.toast(`${P[i].name}: −1 жизнь`, { color: P[i].color, fg: '#111' });
+        say(`${P[i].name}: −1 жизнь`, { color: P[i].color, fg: '#111' });
       }
       rallyStart = ctx.time;
       if (balls.length === 0 && !serving) { serving = true; ctx.after(1000, () => serve(out[i] ? null : i)); }
@@ -227,7 +240,7 @@ registerGame({
       if (!over && balls.length === 1 && ctx.time - rallyStart > 20) {
         spawnBall();
         rallyStart = ctx.time;
-        ctx.toast('Второй мяч!', { color: '#fff', fg: '#111' });
+        say('Второй мяч!', { color: '#fff', fg: '#111' });
       }
     }
 

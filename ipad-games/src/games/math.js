@@ -6,6 +6,8 @@ registerGame({
   rules: 'У каждого перед собой один и тот же пример и 4 варианта ответа.\nПервый верный ответ даёт +1 очко.\nОшибся: до следующего примера ты заблокирован.\nКто первым наберёт 7 очков, тот победил.',
   start(ctx) {
     const N = ctx.n;
+    // 3p: push the toast copies further apart so the rotated copies don't overlap
+    const say = (text, o = {}) => ctx.toast(text, Object.assign({ offset: N === 3 ? Math.max(90, text.length * 7.5 + 30) : 70 }, o));
     const TARGET = 7;
     const DEPTH = N === 2 ? 0.36 : 0.3;
     const LIMIT = 20000; // ms per problem before it is skipped
@@ -50,7 +52,7 @@ registerGame({
     const zones = ctx.players.map(p => {
       const z = ctx.zone(p.i, { depth: DEPTH, className: 'mz' });
       const q = U.h('div', { class: 'q' }, '…');
-      const sc = U.h('div', { class: 'sc' }, '0');
+      const sc = U.h('div', { class: 'sc' }, '0/' + TARGET);
       const tmBar = U.h('i');
       const hd = U.h('div', { class: 'hd' }, q, sc, U.h('div', { class: 'tm' }, tmBar));
       const opts = U.h('div', { class: 'opts' });
@@ -64,18 +66,32 @@ registerGame({
       return { z, q, sc, hd, opts, btns, tmBar };
     });
 
+    // Which bottom corner of zone z (in the player's own view) sits under the exit button, if any.
+    function exitCorner(z) {
+      const r = z.rect;
+      for (const [name, lx] of [['left', 0], ['right', z.w]]) {
+        const v = ctx.toScreen(z.i, lx - z.w / 2, z.h / 2);
+        if (r.x + r.w / 2 + v.x < 70 && r.y + r.h / 2 + v.y < 70) return name;
+      }
+      return null;
+    }
+
     function layout() {
       for (const zb of zones) {
         const w = zb.z.w - 24, h = zb.z.h - 22;
         const cols = w / h >= 2.1 ? 4 : 2;
         const hh = Math.round(h * (cols === 4 ? 0.36 : 0.3));
         zb.hd.style.height = hh + 'px';
-        const qf = Math.round(Math.min(hh * 0.72, (w - 120) / 6.2, 56));
-        zb.qf = qf; zb.qw = w - 2 * 64;
+        const qf = Math.round(Math.min(hh * 0.72, 56));
+        zb.sc.style.fontSize = Math.round(U.clamp(hh * 0.3, 16, 24)) + 'px';
+        zb.qf = qf; zb.qw = w - 2 * (zb.sc.offsetWidth + 10);
         fit(zb);
         zb.opts.style.gridTemplateColumns = `repeat(${cols},1fr)`;
+        const corner = exitCorner(zb.z);
+        zb.opts.style.paddingLeft = corner === 'left' ? '44px' : '0';
+        zb.opts.style.paddingRight = corner === 'right' ? '44px' : '0';
         const rows = 4 / cols;
-        const bh = (h - hh - 10 * (rows - 1)) / rows, bw = (w - 10 * (cols - 1)) / cols;
+        const bh = (h - hh - 10 * (rows - 1)) / rows, bw = (w - (corner ? 44 : 0) - 10 * (cols - 1)) / cols;
         const bf = Math.round(Math.min(bh * 0.5, bw * 0.3, 44));
         zb.btns.forEach(b => { b.style.fontSize = bf + 'px'; });
       }
@@ -93,7 +109,7 @@ registerGame({
     }
 
     function renderScores() {
-      zones.forEach((zb, i) => { zb.sc.textContent = score[i]; });
+      zones.forEach((zb, i) => { zb.sc.textContent = score[i] + '/' + TARGET; });
       pipRows.forEach((row, i) => {
         [...row.children].forEach((e, k) => { e.style.background = k < score[i] ? ctx.players[i].color : 'transparent'; });
       });
@@ -147,7 +163,7 @@ registerGame({
         fit(zb);
         zb.btns.forEach((b, k) => { b.className = 'ob'; b.textContent = popts[i][k]; });
       });
-      timeoutId = ctx.after(LIMIT, () => { ctx.toast('Время вышло', { ms: 1000 }); reveal(-1); });
+      timeoutId = ctx.after(LIMIT, () => { say('Время вышло', { ms: 1000 }); reveal(-1); });
     }
 
     function answer(i, k) {
@@ -162,7 +178,7 @@ registerGame({
         locked.add(i);
         zb.btns[k].classList.add('bad');
         zb.z.el.classList.add('locked');
-        if (locked.size >= N) { ctx.toast('Никто не угадал', { ms: 1000 }); reveal(-1); }
+        if (locked.size >= N) { say('Никто не угадал', { ms: 1000 }); reveal(-1); }
       }
     }
 
@@ -177,11 +193,11 @@ registerGame({
       });
       renderScores();
       if (w >= 0 && score[w] >= TARGET) {
-        ctx.toast(`${ctx.players[w].name} победил!`, { color: ctx.players[w].color, fg: '#111', ms: 1200 });
+        say(`${ctx.players[w].name} победил!`, { color: ctx.players[w].color, fg: '#111', ms: 1200 });
         ctx.after(1100, () => ctx.end({ winner: w, scores: score.slice() }));
         return;
       }
-      if (w >= 0) ctx.toast(`+1 ${ctx.players[w].name}`, { color: ctx.players[w].color, fg: '#111', ms: 1000 });
+      if (w >= 0) say(`+1 ${ctx.players[w].name}`, { color: ctx.players[w].color, fg: '#111', ms: 1000 });
       ctx.after(w >= 0 ? 1300 : 1600, next);
     }
 

@@ -143,11 +143,11 @@ registerGame({
       pulse += dt;
       // physics of the falling disc (in cell units)
       if (drop && dt > 0) {
-        const G = 38;
+        const G = 70;
         drop.v += G * dt;
         drop.y += drop.v * dt;
         if (drop.y >= drop.row) {
-          if (!drop.bounced && drop.v > 4) { drop.y = drop.row; drop.v = -drop.v * 0.28; drop.bounced = true; }
+          if (!drop.bounced && drop.v > 4) { drop.y = drop.row; drop.v = -drop.v * 0.16; drop.bounced = true; }
           else land();
         }
       }

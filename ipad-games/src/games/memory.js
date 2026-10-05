@@ -36,7 +36,7 @@ registerGame({
         padding:0 18px;gap:12px;background:#1a1f35;border:3px solid transparent;transition:background .25s,box-shadow .25s;font-weight:900}
       .g-memory .zi .tx{font-size:24px;color:#9aa1c4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
       .g-memory .zi .tx b{color:var(--tc)}
-      .g-memory .zi .sc{font-size:22px;color:var(--pc);white-space:nowrap;flex:0 0 auto}
+      .g-memory .zi .sc{font-size:22px;color:var(--pc);white-space:nowrap;flex:0 0 auto;display:flex;align-items:baseline;gap:6px}
       .g-memory .zi .sc span{font-size:34px}
       .g-memory .zi.on{background:var(--pc);border-color:#fff;box-shadow:0 0 30px 6px var(--pc)}
       .g-memory .zi.on .tx{color:#111;font-size:28px}
@@ -54,7 +54,7 @@ registerGame({
       const z = ctx.zone(p.i, { depth: 78 });
       const tx = U.h('div', { class: 'tx' });
       const scN = U.h('span', null, '0');
-      const sc = U.h('div', { class: 'sc' }, 'пар: ', scN);
+      const sc = U.h('div', { class: 'sc' }, 'пар:', scN);
       const inner = U.h('div', { class: 'zi' }, tx, sc);
       const end = exitEnd(p.i);
       if (end === 'right') inner.style.right = '56px';
