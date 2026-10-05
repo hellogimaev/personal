@@ -65,7 +65,7 @@ Globals: `U.rand(a,b)`, `U.randInt(a,b)`, `U.pick(arr)`, `U.shuffle(arr)`, `U.cl
 
 Keep everything scoped inside `start` (or an IIFE) — files share one global scope.
 CSS for a game: inject a `<style>` element inside `ctx.root`, prefix selectors with a game class
-(e.g. `.g-reaction ...`). The exit button sits in the top-left 56x56 px corner.
+(e.g. `.g-reaction ...`). The exit button (40px) sits on a free edge: 2p → middle of the left edge, 3p → middle of the top edge. Keep that small spot free of important controls.
 
 Design: dark background (`#0f1220`), player colors bright, big touch targets (>= 60px),
 big readable text. Show each player's score/lives in their own zone. Rounds should be short;

@@ -316,6 +316,9 @@ function makeCtx(game, n) {
           U.h('button', { class: 'btn', onclick: () => { destroy(); showMenu(); } }, 'В меню'))));
     root.append(ov);
   });
+  // Put the exit button on an edge no player sits at: 2p → middle of the left edge, 3p → middle of the top edge.
+  if (n === 2) Object.assign(exit.style, { left: '6px', top: '50%', transform: 'translateY(-50%)' });
+  else Object.assign(exit.style, { left: '50%', top: '6px', transform: 'translateX(-50%)' });
   root.append(exit);
 
   return ctx;

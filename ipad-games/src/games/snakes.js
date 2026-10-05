@@ -117,7 +117,7 @@ registerGame({
       FW = Math.round(fr.w); FH = Math.round(fr.h);
       S = Math.sqrt(FW * FH);
       updView();
-      TW = Math.max(5, S * 0.0095);
+      TW = Math.max(5, S * 0.0105);
       SPEED = S * 0.15;
       TURN = 3.1;
       LAG = TW * 1.7;
@@ -313,10 +313,10 @@ registerGame({
           g.shadowColor = sn.color;
           g.shadowBlur = 16;
           g.fillStyle = sn.color;
-          g.beginPath(); g.arc(sn.x, sn.y, TW * 0.95, 0, Math.PI * 2); g.fill();
+          g.beginPath(); g.arc(sn.x, sn.y, TW * 1.2, 0, Math.PI * 2); g.fill();
           g.shadowBlur = 0;
           g.fillStyle = '#fff';
-          g.beginPath(); g.arc(sn.x, sn.y, TW * 0.42, 0, Math.PI * 2); g.fill();
+          g.beginPath(); g.arc(sn.x, sn.y, TW * 0.5, 0, Math.PI * 2); g.fill();
           g.restore();
           if (state === 'ready' || ctx.paused || roundT < 1.2) {
             // heading arrow + ring

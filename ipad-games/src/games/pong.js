@@ -177,7 +177,7 @@ registerGame({
       if (l.y < -PT / 2 - R || l.y > PT / 2) return false;
       if (Math.abs(l.x) > PL / 2 + R * 0.8) return false;
       const off = U.clamp(l.x / (PL / 2), -1, 1);
-      const ang = off * 1.05; // up to ~60 degrees
+      const ang = off * 1.05 + U.rand(-0.05, 0.05); // up to ~60 degrees, tiny jitter keeps rallies from looping
       b.sp = Math.min(MAXV, b.sp * 1.06);
       b.hits++;
       const nv = ctx.toScreen(i, Math.sin(ang) * b.sp, -Math.cos(ang) * b.sp);
